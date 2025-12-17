@@ -1,35 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route,
+  Outlet 
+} from 'react-router-dom'; 
 
-function App() {
-  const [count, setCount] = useState(0)
+import { ThemeProvider, CssBaseline, GlobalStyles, Box } from '@mui/material';
+import { theme } from '../theme/theme';
 
+import NavBar from '../components/layout/Header';
+import HeroCarousel from '../components/home/HeroCarousel';
+import ContentSection from '../components/home/ContentSection';
+import Footer from '../components/layout/Footer';
+
+import TripPlanner from './pages/ItineraryPlanner'; 
+
+
+const HomeContent = () => (
+  <>
+    <HeroCarousel />
+    <ContentSection />
+  </>
+);
+
+const MainLayout = () => (
+  <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
+    <NavBar />
+    
+    <Box sx={{ flexGrow: 1 }}>
+      <Outlet /> 
+    </Box>
+
+    <Footer />
+  </Box>
+);
+
+
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <GlobalStyles styles={{ body: { margin: 0, padding: 0, width: '100%', overflowX: 'hidden' }, '#root': { width: '100%', maxWidth: '100%' } }} />
+      
+      <Router>
+        <Routes>
+          
+          <Route element={<MainLayout />}>
+            
+            <Route path="/" element={<HomeContent />} />
+            
+            <Route path="/planner" element={<TripPlanner />} />
+            
 
-export default App
+          </Route>
+          
+
+        </Routes>
+      </Router>
+    </ThemeProvider>
+  );
+}
