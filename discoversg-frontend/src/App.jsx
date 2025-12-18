@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  BrowserRouter as Router, 
-  Routes, 
+import {
+  BrowserRouter as Router,
+  Routes,
   Route,
-  Outlet 
-} from 'react-router-dom'; 
+  Outlet
+} from 'react-router-dom';
 
 import { ThemeProvider, CssBaseline, GlobalStyles, Box } from '@mui/material';
 import { theme } from '../theme/theme';
@@ -14,7 +14,7 @@ import HeroCarousel from '../components/home/HeroCarousel';
 import ContentSection from '../components/home/ContentSection';
 import Footer from '../components/layout/Footer';
 
-import TripPlanner from './pages/ItineraryPlanner'; 
+import TripPlanner from './pages/ItineraryPlanner';
 
 
 const HomeContent = () => (
@@ -27,9 +27,9 @@ const HomeContent = () => (
 const MainLayout = () => (
   <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
     <NavBar />
-    
+
     <Box sx={{ flexGrow: 1 }}>
-      <Outlet /> 
+      <Outlet />
     </Box>
 
     <Footer />
@@ -42,22 +42,19 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <GlobalStyles styles={{ body: { margin: 0, padding: 0, width: '100%', overflowX: 'hidden' }, '#root': { width: '100%', maxWidth: '100%' } }} />
-      
-      <Router>
-        <Routes>
-          
-          <Route element={<MainLayout />}>
-            
-            <Route path="/" element={<HomeContent />} />
-            
-            <Route path="/planner" element={<TripPlanner />} />
-            
+      <Routes>
 
-          </Route>
-          
+        <Route element={<MainLayout />}>
 
-        </Routes>
-      </Router>
+          <Route path="/" element={<HomeContent />} />
+
+          <Route path="/planner" element={<TripPlanner />} />
+
+
+        </Route>
+
+
+      </Routes>
     </ThemeProvider>
   );
 }
