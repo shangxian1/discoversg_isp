@@ -15,7 +15,8 @@ import ContentSection from '../components/home/ContentSection';
 import Footer from '../components/layout/Footer';
 
 import TripPlanner from './pages/ItineraryPlanner'; 
-
+import Login from './pages/login'; 
+import SignUp from './pages/SignUp'; 
 
 const HomeContent = () => (
   <>
@@ -52,10 +53,12 @@ export default function App() {
             
             <Route path="/planner" element={<TripPlanner />} />
             
+            <Route path="/login" element={<Login />} />
 
+            <Route path="/signup" element={<SignUp />} />
+            
           </Route>
           
-
         </Routes>
       </Router>
     </ThemeProvider>
