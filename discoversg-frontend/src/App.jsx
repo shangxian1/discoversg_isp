@@ -14,8 +14,9 @@ import HeroCarousel from '../components/home/HeroCarousel';
 import ContentSection from '../components/home/ContentSection';
 import Footer from '../components/layout/Footer';
 
-import TripPlanner from './pages/ItineraryPlanner';
-
+import TripPlanner from './pages/ItineraryPlanner'; 
+import Login from './pages/login'; 
+import SignUp from './pages/SignUp'; 
 
 const HomeContent = () => (
   <>
@@ -42,19 +43,24 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <GlobalStyles styles={{ body: { margin: 0, padding: 0, width: '100%', overflowX: 'hidden' }, '#root': { width: '100%', maxWidth: '100%' } }} />
-      <Routes>
+      
+      <Router>
+        <Routes>
+          
+          <Route element={<MainLayout />}>
+            
+            <Route path="/" element={<HomeContent />} />
+            
+            <Route path="/planner" element={<TripPlanner />} />
+            
+            <Route path="/login" element={<Login />} />
 
-        <Route element={<MainLayout />}>
-
-          <Route path="/" element={<HomeContent />} />
-
-          <Route path="/planner" element={<TripPlanner />} />
-
-
-        </Route>
-
-
-      </Routes>
+            <Route path="/signup" element={<SignUp />} />
+            
+          </Route>
+          
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 }
