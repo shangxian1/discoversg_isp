@@ -86,4 +86,40 @@ async function main(place, travelDate) {
 
 }
 
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: "Please provide both username and password" });
+  }
+
+  try {
+    const [rows] = await global.db.execute(
+      'SELECT userID, userName, roleID FROM user WHERE userName = ? AND userPassword = ?',
+      [username, password]
+    );
+
+    if (rows.length > 0) {
+      const user = rows[0];
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        user: {
+          id: user.userID,
+          name: user.userName,
+          role: user.roleID
+        }
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        message: "Invalid username or password"
+      });
+    }
+  } catch (error) {
+    console.error("Database Error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 module.exports = router;
