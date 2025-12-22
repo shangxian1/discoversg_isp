@@ -18,6 +18,7 @@ import TripPlanner from './pages/ItineraryPlanner';
 import Login from './pages/login'; 
 import SignUp from './pages/SignUp'; 
 import Feed from './pages/Feed';
+import Activities from './pages/ActivitiesPage'; 
 
 const HomeContent = () => (
   <>
@@ -63,7 +64,7 @@ export default function App() {
             path="/" 
             element={isLoggedIn ? <UserHome /> : <HomeContent />} 
           />
-          
+          <Route path="/activities" element={<Activities />} />
           <Route path="/planner" element={<TripPlanner />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />

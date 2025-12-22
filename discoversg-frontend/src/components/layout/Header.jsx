@@ -8,7 +8,7 @@ import logo from '../../assets/discoversg.png'; // Updated Path
 const Navbar = () => {
     const location = useLocation(); // Hook to get current path for styling active link
     const navItems = [
-        { name: 'Activities', path: '/' },      // Assuming home/main page is activities
+        { name: 'Activities', path: '/activities' },      // Assuming home/main page is activities
         { name: 'Feed', path: '/feed' },
         { name: 'Planner', path: '/planner' }   // The target route for the itinerary planner
     ];
