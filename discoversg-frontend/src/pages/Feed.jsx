@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Grid, Avatar, Stack, Button, Box, Container, Paper, InputBase, IconButton } from '@mui/material';
+import { Grid, Avatar, Stack, Button, Box, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
 import { ToggleFeedButton, ToggleCategoryButton } from '../components/feed/Buttons';
 import { Search as SearchIcon } from '@mui/icons-material';
 
-import Feeds from '../components/feed/Feeds';
+import Feeds from '../components/feed/FeedLayout';
 
 function Feed() {
   const [activeScreen, setActiveScreen] = useState('allFeeds');
   const [activeCategory, setActiveCategory] = useState('localVideos');
+  const [isRecentChecked, setRecentChecked] = useState(false);
+  const [isLikesChecked, setLikesChecked] = useState(false);
 
   const renderScreen = () => {
     switch (activeScreen) {
       case 'allFeeds':
-        return <Feeds category={activeCategory} />;
+        return;
       case 'savedFeeds':
         return <p>Saved Feeds Section</p>
       //return <SavedFeeds />;
@@ -23,13 +25,21 @@ function Feed() {
 
   const renderCategory = () => {
     switch (activeCategory) {
-      case 'localVideos' && activeScreen !== 'localVideos':
-        return <Feeds category={activeCategory} />;
+      case 'localVideos':
+        return <Feeds screen={activeScreen} category={activeCategory} />;
       case 'plannerGuides':
-        return <Feeds category={activeCategory} />;
+        return <Feeds screen={activeScreen} category={activeCategory} />;
       default:
         return null;
     };
+  }
+
+  const handleRecentChange = (event) => {
+    setRecentChecked(event.target.checked);
+  }
+
+  const handleLikesChange = (event) => {
+    setLikesChecked(event.target.checked);
   }
 
   return <>
@@ -53,31 +63,27 @@ function Feed() {
 
         <Stack spacing={2} className='p-4 pb-4'>
           <p className="text-xl font-bold">Filter</p>
-          <Button
-            variant='contained'
-            className='bg-white! text-black! normal-case!'
-          //onClick={}
-          >
-            <Box display="flex" gap={1}>
-              <p>Recent Feeds</p>
-            </Box>
-          </Button>
-          <Button
-            variant='contained'
-            className='bg-white! text-black! normal-case!'
-          //onClick={}
-          >
-            <Box display="flex" gap={1}>
-              <p>Most Likes</p>
-            </Box>
-          </Button>
+          <FormGroup>
+            <FormControlLabel className='w-fit rounded-xs pr-3' control={
+              <Checkbox
+                checked={isRecentChecked}
+                onChange={handleRecentChange}
+              />
+            } label="Recent Feeds" />
+            <FormControlLabel className='w-fit rounded-xs pr-3' control={
+              <Checkbox
+                checked={isLikesChecked}
+                onChange={handleLikesChange}
+              />
+            } label="Most Likes" />
+          </FormGroup>
         </Stack>
       </Grid>
 
       <Grid size={9} sx={{ height: '100%' }}>
-        <Container className='m-3! mx-0! px-0! flex justify-between'>
+        <Container className='m-3! mx-0! px-0! flex justify-between items-center'>
           <p className='text-3xl font-bold'>Feed</p>
-          <div className='flex justify-between w-max align-middle'>
+          <div className='flex justify-between w-max'>
             <Paper component="form" sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: 5, boxShadow: 3 }}>
               <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
               <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Search..." />
