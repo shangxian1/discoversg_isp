@@ -18,7 +18,8 @@ import TripPlanner from './pages/ItineraryPlanner';
 import Login from './pages/login'; 
 import SignUp from './pages/SignUp'; 
 import Feed from './pages/Feed';
-import Activities from './pages/ActivitiesPage'; 
+import Activities from './pages/ActivitiesPage';
+import Profile from './pages/Profile';
 
 const HomeContent = () => (
   <>
@@ -69,7 +70,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path='/feed' element={<Feed />} />
-          
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </ThemeProvider>

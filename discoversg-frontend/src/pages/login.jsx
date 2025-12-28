@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Paper, Alert, Collapse } from '@mui/material'; // Added Alert and Collapse
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ const Login = () => {
             required
             error={Boolean(error)}
           />
-
+          
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Button 
               type="submit" 
@@ -78,11 +78,6 @@ const Login = () => {
               Login
             </Button>
           </Box>
-          <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 2 }}>
-            Don't have an account? Click{' '}
-            <Link to="/signup" style={{ color: '#196f75', fontWeight: 'bold', cursor: 'pointer' }}>here</Link>
-            {' '}to sign up
-          </Typography>
         </form>
       </Paper>
     </Box>
