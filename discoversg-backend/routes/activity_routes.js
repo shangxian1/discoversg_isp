@@ -7,15 +7,17 @@ router.get('/activities', (req, res) => {
             id: 1,
             title: 'Painting',
             category: 'Arts & Culture',
+            description: 'Participants immersed themselves in the joyful, creative act of bringing color and form to life.',
             price: 67.67,
-            image: 'https://via.placeholder.com/300',
+            image: 'https://placehold.co/200',
         },
         {
             id: 2,
             title: 'Sightseeing',
             category: 'Outdoor & Nature',
+            description:'Participants immersed themselves in the joyful, creative act of bringing color and form to life.',
             price: 61.61,
-            image: 'https://via.placeholder.com/300',
+            image: 'https://placehold.co/200',
         }
     ]);
 });
