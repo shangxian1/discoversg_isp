@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Paper, Alert, Collapse, Link } from '@mui/material';
+import { Box, Typography, TextField, Button, Paper, Alert, Collapse, Link, emphasize } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [Email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -81,6 +82,15 @@ const Signup = () => {
             margin="normal"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <TextField
+            label="Email *"
+            type="Email"
+            fullWidth
+            margin="normal"
+            value={Email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <TextField
