@@ -122,4 +122,49 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/signup', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Username and password are required" 
+    });
+  }
+
+  try {
+    const [existingUsers] = await global.db.execute(
+      'SELECT userID FROM user WHERE userName = ?',
+      [username]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Username is already taken" 
+      });
+    }
+
+    const defaultEmail = `${username}@discoversg.com`; 
+    
+    const [result] = await global.db.execute(
+      'INSERT INTO user (roleID, userName, userPassword, userEmail, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      [1, username, password, defaultEmail]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      userId: result.insertId
+    });
+
+  } catch (error) {
+    console.error("Signup Database Error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error during registration" 
+    });
+  }
+});
+
 module.exports = router;
