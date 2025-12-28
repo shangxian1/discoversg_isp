@@ -11,10 +11,26 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const hasLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const isPasswordValid = hasLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecial;
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match!");
+      return;
+    }
+    
+    if (!isPasswordValid) {
+      setError("Please meet all password requirements.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match!");

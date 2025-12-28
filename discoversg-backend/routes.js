@@ -14,6 +14,62 @@ router.use(cors());
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
+//signup 
+router.post('/signup', async (req, res) => {
+  const { username, password, email } = req.body;
+
+  if (!username || !password || !email) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Username, email, and password are required" 
+    });
+  }
+
+  const hasLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (!hasLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Password is too weak. It must have 8+ chars, uppercase, number, and symbol." 
+    });
+  }
+
+  try {
+    const [existingUsers] = await global.db.execute(
+      'SELECT userID FROM user WHERE userName = ?',
+      [username]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Username is already taken" 
+      });
+    }
+    const [result] = await global.db.execute(
+      'INSERT INTO user (roleID, userName, userPassword, userEmail, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      [1, username, password, email]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      userId: result.insertId
+    });
+
+  } catch (error) {
+    console.error("Signup Database Error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error during registration" 
+    });
+  }
+});
+
 // --- AI Itinerary Route ---
 router.post('/ai', (req, res) => {
     const { place, travelDate } = req.body;
@@ -101,5 +157,7 @@ router.put('/update-preferences', async (req, res) => {
         res.status(500).json({ success: false, message: "Pref Error" });
     }
 });
+
+
 
 module.exports = router;
