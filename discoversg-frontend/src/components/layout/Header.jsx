@@ -1,87 +1,99 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { AppBar, Toolbar, Typography, Button, Container, Box, Avatar, IconButton } from '@mui/material';
 import { Login as LoginIcon } from '@mui/icons-material';
-// 1. Import Link and useLocation from react-router-dom
-import { Link as RouterLink, useLocation } from 'react-router-dom';
-import logo from '../../assets/discoversg.png'; // Updated Path
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import logo from '../../assets/discoversg.png'; 
 
 const Navbar = () => {
-    const location = useLocation(); // Hook to get current path for styling active link
+    const location = useLocation();
+    const navigate = useNavigate();
+    
+    // 1. Initialize state with current localStorage data
+    const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user')));
+
+    // 2. Listen for storage changes to update the bubble instantly
+    useEffect(() => {
+        const handleStorageChange = () => {
+            setUserData(JSON.parse(localStorage.getItem('user')));
+        };
+
+        // Listen for the custom event dispatched from ProfilePage
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     const navItems = [
-        { name: 'Activities', path: '/activities' },      // Assuming home/main page is activities
+        { name: 'Activities', path: '/activities' },
         { name: 'Feed', path: '/feed' },
-        { name: 'Planner', path: '/planner' }   // The target route for the itinerary planner
+        { name: 'Planner', path: '/planner' }
     ];
 
+    if (userData) {
+        navItems.push({ name: 'Itinerary', path: '/itinerary' });
+    }
+
     return (
-        <AppBar position="static" color="primary" elevation={0} sx={{ width: '100%' }}>
+        <AppBar position="static" color="primary" elevation={0} sx={{ width: '100%', bgcolor: '#c61a1a' }}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters sx={{ width: '100%', display: 'flex', alignItems: 'center' }}>
                     
-                    {/* Logo Section - Make logo link to home */}
+                    {/* Logo Section */}
                     <Box sx={{ display: 'flex', alignItems: 'center', mr: 6 }}>
-                        <Box
-                            component={RouterLink} // 2. Make the logo linkable to home
-                            to="/"
-                            sx={{ height: 50, width: 'auto', display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-                        >
-                            <Box
-                                component="img"
-                                sx={{ height: 50, width: 'auto' }}
-                                alt="DiscoverSG Logo"
-                                src={logo} 
-                            />
+                        <Box component={RouterLink} to="/" sx={{ height: 50, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                            <Box component="img" sx={{ height: 40, width: 'auto' }} alt="DiscoverSG Logo" src={logo} />
                         </Box>
                     </Box>
 
                     {/* Navigation Links */}
                     <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 4, mr: 6 }}>
                         {navItems.map((item) => (
-                            // 3. Replace Typography with a RouterLink and wrap in Box for spacing
-                            <Box key={item.name} sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography 
-                                    component={RouterLink} // Use RouterLink component
-                                    to={item.path}
-                                    variant="body1" 
-                                    sx={{ 
-                                        cursor: 'pointer', 
-                                        fontWeight: 500,
-                                        textDecoration: 'none', 
-                                        color: 'white', // Ensure link color is white
-                                        // Optional: Highlight the active link
-                                        borderBottom: location.pathname === item.path ? '2px solid white' : 'none',
-                                        pb: 0.5 // Padding bottom for the border line
-                                    }}
-                                >
-                                    {item.name}
-                                </Typography>
-                            </Box>
+                            <Typography 
+                                key={item.name}
+                                component={RouterLink} 
+                                to={item.path}
+                                variant="body1" 
+                                sx={{ 
+                                    fontWeight: 500,
+                                    textDecoration: 'none', 
+                                    color: 'white',
+                                    borderBottom: location.pathname === item.path ? '2px solid white' : 'none',
+                                    pb: 0.5 
+                                }}
+                            >
+                                {item.name}
+                            </Typography>
                         ))}
                     </Box>
 
-                    {/* Auth Buttons - Assuming Login links to /login */}
-                    <Box sx={{ display: 'flex', gap: 2, marginLeft: 'auto' }}>
-                        <Button 
-                            variant="contained" 
-                            color="secondary" 
-                            component={RouterLink} // Make Login Button a link
-                            to="/login"
-                            sx={{ borderRadius: 5, textTransform: 'none' }}
-                        >
-                            Login
-                        </Button>
-                        <Button 
-                            variant="contained" 
-                            color="secondary" 
-                            endIcon={<LoginIcon />} 
-                            component={RouterLink} // Make Sign Up Button a link
-                            to="/signup" // Assuming you have a /signup route
-                            sx={{ borderRadius: 5, textTransform: 'none', whiteSpace: 'nowrap' }}
-                        >
-                            Sign Up
-                        </Button>
+                    {/* Dynamic Auth Section */}
+                    <Box sx={{ display: 'flex', gap: 2, marginLeft: 'auto', alignItems: 'center' }}>
+                        {userData ? (
+                            <IconButton onClick={() => navigate('/profile')} sx={{ p: 0 }}>
+                                <Avatar 
+                                    // 3. PRIORITIZE THE UPLOADED IMAGE URL
+                                    src={userData.profilePicUrl} 
+                                    sx={{ 
+                                        bgcolor: '#b39ddb', 
+                                        border: '2px solid white',
+                                        width: 45,
+                                        height: 45
+                                    }}
+                                >
+                                    {/* 4. FALLBACK TO INITIAL IF NO IMAGE EXISTS */}
+                                    {!userData.profilePicUrl && (userData.name?.charAt(0).toUpperCase() || 'U')}
+                                </Avatar>
+                            </IconButton>
+                        ) : (
+                            <>
+                                <Button component={RouterLink} to="/login" variant="contained" color="secondary" sx={{ borderRadius: 5, textTransform: 'none' }}>
+                                    Login
+                                </Button>
+                                <Button component={RouterLink} to="/signup" variant="contained" color="secondary" endIcon={<LoginIcon />} sx={{ borderRadius: 5, textTransform: 'none' }}>
+                                    Sign Up
+                                </Button>
+                            </>
+                        )}
                     </Box>
-
                 </Toolbar>
             </Container>
         </AppBar>
