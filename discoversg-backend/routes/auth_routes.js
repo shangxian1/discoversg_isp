@@ -1,14 +1,7 @@
-// routes.js
-const { GoogleGenAI } = require('@google/genai');
-require('dotenv').config();
-
-// Use 'var' or simply assign if you are facing redeclaration issues in certain environments,
-// but usually, 'const' is fine if this is the only place it is declared in this scope.
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 const express = require('express');
 const router = express.Router();
 const cors = require('cors');
+require('../database');
 
 router.use(cors());
 router.use(express.json());
@@ -69,26 +62,6 @@ router.post('/signup', async (req, res) => {
     });
   }
 });
-
-// --- AI Itinerary Route ---
-router.post('/ai', (req, res) => {
-    const { place, travelDate } = req.body;
-    main(place, travelDate)
-        .then((response) => res.status(200).json({ "result": response }))
-        .catch((error) => res.status(500).json(error));
-});
-
-async function main(place, travelDate) {
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    try {
-        const prompt = `Based on the area "${place}" in Singapore, generate a hidden gems itinerary...`;
-        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-        let jsonString = response.text.trim().replace(/```json\s*|```\s*/g, '').trim();
-        return JSON.parse(jsonString);
-    } catch (e) {
-        throw new Error("Unable to generate content.");
-    }
-}
 
 // --- Auth Routes ---
 // --- Updated Login Route in routes.js ---
