@@ -131,6 +131,7 @@ export default function TripPlanner() {
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  console.log(response);
 
   // 2. Helper to extract markers from the nested JSON structure
   const mapMarkers = useMemo(() => {
@@ -150,6 +151,7 @@ export default function TripPlanner() {
     });
     return markers;
   }, [response]);
+  console.log(mapMarkers);
 
   // Default Singapore center
   const defaultCenter = { lat: 1.3521, lng: 103.8198 };
@@ -169,7 +171,7 @@ export default function TripPlanner() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/ai', {
+      const res = await fetch('http://localhost:3000/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
