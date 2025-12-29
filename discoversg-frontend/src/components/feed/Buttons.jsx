@@ -18,7 +18,7 @@ export const ToggleFeedButton = ({ id, label, onClick, state }) => {
 export const ToggleCategoryButton = ({ id, label, qty, onClick, state }) => {
   return <Button
     variant='contained'
-    className='bg-white! text-black! normal-case!'
+    className='w-fit! bg-white! text-black! normal-case!'
     onClick={onClick}
     sx={{
       opacity: id == state ? 1 : 0.5,
