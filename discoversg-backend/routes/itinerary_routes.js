@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+require('../database');
 
 router.get('/itinerary', (req, res) => {
     res.json([

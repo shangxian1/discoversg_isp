@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const express = require('express');
 const router = express.Router();
-require('dotenv').config();
+require('../database');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
