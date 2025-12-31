@@ -57,12 +57,12 @@ const ProfilePage = () => {
         };
 
         try {
-            const res1 = await fetch('http://localhost:3000/update-profile', {
+            const res1 = await fetch('http://localhost:3000/api/update-profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profileBody)
             });
-            const res2 = await fetch('http://localhost:3000/update-preferences', {
+            const res2 = await fetch('http://localhost:3000/api/update-preferences', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(prefBody)
