@@ -32,7 +32,7 @@ const Login = () => {
       setError("Could not connect to the server. Please try again later.");
     }
   };
-
+  
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', bgcolor: '#f5f5f5' }}>
       <Paper elevation={3} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>

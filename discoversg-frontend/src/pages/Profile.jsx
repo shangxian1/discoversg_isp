@@ -90,7 +90,7 @@ const ProfilePage = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: '#fdf2f2', minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ bgcolor: '#ffffffff', minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
             <Container maxWidth="lg" sx={{ py: 6 }}>
                 <Grid container spacing={8} justifyContent="center">
                     <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
