@@ -66,7 +66,7 @@ const Feeds = ({ screen, category }) => {
           />
           <CardMedia
             component="iframe"
-            src="https://www.tiktok.com/embed/7562158707266718983"
+            src="https://www.youtube.com/embed/-wwW3wLNFAY?start=580&autoplay=1"
             title="TikTok Video"
             height="700"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
@@ -82,12 +82,7 @@ const Feeds = ({ screen, category }) => {
             </div>
 
             <p className="text-xl font-bold">Singapore Hidden Gems Explore Vibrant Streets & Iconic Spots!</p>
-            <p className="text-l mt-2">The video highlights the following iconic spots:</p>
-            <ul className="list-disc text-l pl-8">
-              <li>Little India: Showcasing its vibrant and colorful streets.</li>
-              <li>Sultan Mosque: A historic and architectural landmark.</li>
-              <li>Haji Lane: Known for its artistic and trendy atmosphere.</li>
-            </ul>
+            <p className="text-l mt-2">The video highlights Kampong Glam as its primary filming location, a historic neighborhood featuring the Sultan Mosque, the artistic Haji Lane, and the Hjh Maimunah Restaurant. Located a short distance from this area is the vibrant cultural district of Little India, which is celebrated for its colorful and lively streets. Finally, the video transitions to the modern waterfront of Marina Bay, home to the world-famous Gardens by the Bay and its iconic Supertrees.</p>
             <br />
             <p className='text-l'>Kampong Glam, Singapore</p>
             <p className='text-l'>Address: 3 Muscat St, Singapore 198833</p>
