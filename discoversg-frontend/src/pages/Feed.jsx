@@ -75,7 +75,7 @@ function Feed() {
                 checked={isLikesChecked}
                 onChange={handleLikesChange}
               />
-            } label="Most Likes" />
+            } label="Top Rated" />
           </FormGroup>
         </Stack>
       </Grid>
