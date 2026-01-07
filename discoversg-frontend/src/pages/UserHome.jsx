@@ -49,18 +49,6 @@ const UserHome = () => {
 
         {/* 3. Inserted the ContentSection here */}
         <ContentSection />
-
-        {/* Content Grids for "For You" and "Featured" */}
-        <Box sx={{ mt: 6, mb: 6 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>Recommended For You:</Typography>
-          <Grid container spacing={3}>
-            {[1, 2, 3].map((item) => (
-              <Grid item xs={12} sm={4} key={item}>
-                <Paper elevation={0} sx={{ height: '180px', bgcolor: '#f5f5f5', borderRadius: 2 }} />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
       </Container>
     </Box>
   );

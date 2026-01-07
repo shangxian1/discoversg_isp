@@ -61,12 +61,13 @@ const ContentSection = () => {
 
       {/* Campaign Section */}
       <Grid container spacing={3} sx={{ mb: 8 }}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{
             p: 4,
             borderRadius: 4,
             bgcolor: '#e3f2fd',
             border: '1px solid #bbdefb',
+            height: '100%',
             backgroundImage: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)'
           }}>
             <Typography variant="overline" color="primary" fontWeight="bold">
@@ -81,12 +82,13 @@ const ContentSection = () => {
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{
             p: 4,
             borderRadius: 4,
             bgcolor: '#f1f8e9',
             border: '1px solid #dcedc8',
+            height: '100%',
             backgroundImage: 'linear-gradient(135deg, #f1f8e9 0%, #ffffff 100%)'
           }}>
             <Typography variant="overline" color="success.main" fontWeight="bold">
@@ -109,37 +111,23 @@ const ContentSection = () => {
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
         Recommended For You
       </Typography>
-
-      <Grid
-        container
-        spacing={3}
-        // This ensures the row doesn't break if there's a tiny bit of overflow
-        wrap="wrap"
-        sx={{
-          width: '100%',
-          margin: 0,
-          // This ensures that on screens 900px and wider, it MUST stay 3 columns
-          '& .MuiGrid-item': {
-            display: 'flex'
-          }
-        }}
-      >
-        {/* We use xs={12} for mobile, but sm={4} to force 3 columns earlier (at 600px+) */}
-        {[
-          { title: "Pearl's Hill City Park", loc: "Near Outram Park", cat: "Nature", img: pearlHillImg },
-          { title: "Japanese Cemetery Park", loc: "Hougang", cat: "Heritage", img: japaneseCemeteryImg },
-          { title: "Hampstead Wetlands", loc: "Seletar Aerospace", cat: "Wildlife", img: hampsteadImg }
-        ].map((gem, index) => (
-          <Grid item xs={12} sm={4} key={index}>
-            <GemCard
-              title={gem.title}
-              location={gem.loc}
-              category={gem.cat}
-              image={gem.img}
-            />
-          </Grid>
-        ))}
-      </Grid>
+        <Grid container spacing={3}>
+          {/* We use xs={12} for mobile, but sm={4} to force 3 columns earlier (at 600px+) */}
+          {[
+            { title: "Pearl's Hill City Park", loc: "Near Outram Park", cat: "Nature", img: pearlHillImg },
+            { title: "Japanese Cemetery Park", loc: "Hougang", cat: "Heritage", img: japaneseCemeteryImg },
+            { title: "Hampstead Wetlands", loc: "Seletar Aerospace", cat: "Wildlife", img: hampsteadImg }
+          ].map((gem, index) => (
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+              <GemCard
+                title={gem.title}
+                location={gem.loc}
+                category={gem.cat}
+                image={gem.img}
+              />
+            </Grid>
+          ))}
+        </Grid>
 
     </Container>
   );
