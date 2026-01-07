@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth_routes');
 const activityRoutes = require('./routes/activity_routes');
 const itineraryRoutes = require('./routes/itinerary_routes');
 const algoRoutes = require('./routes/algo_route');
+const feedRoutes = require('./routes/feed_routes');
 
 // Routes
 app.use('/api', aiRoutes);
@@ -15,5 +16,6 @@ app.use('/api', itineraryRoutes);
 app.use('/api', authRoutes);
 app.use('/api', algoRoutes);
 
+app.use('/api', feedRoutes);
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));
