@@ -1,29 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const cors = require('cors');
-require('../database');
+require('../database'); 
 
-// --- Recommendation Helper Functions ---
+console.log("✅ ALGO ROUTES FILE LOADED! (Bonus Location Logic)");
 
-// 1. Helper: Fetch User Preferences & History using global.db
+// --- 1. Helper Functions ---
+
 async function getUserProfile(userID) {
+    if (!global.db) throw new Error("Database connection missing!");
+
+    // 1. Get Explicit Preferences
     const [prefRows] = await global.db.execute(
         "SELECT budgetLevel, dietaryRequirements, nearbyLocation FROM preference WHERE userID = ?",
         [userID]
     );
 
-    // Default if no prefs found
     const preferences = prefRows[0] || { 
         budgetLevel: null, 
         dietaryRequirements: 'None',
         nearbyLocation: null 
     };
 
-    // Get Implicit History (Past Bookings)
+    // 2. Get Implicit History (Past Bookings)
     const [historyRows] = await global.db.execute(`
-        SELECT 
-            c.categoryName, 
-            a.tags
+        SELECT c.categoryName, a.tags
         FROM booking b
         JOIN activitysession s ON b.sessionID = s.sessionID
         JOIN activity a ON s.activityID = a.activityID
@@ -31,106 +31,115 @@ async function getUserProfile(userID) {
         WHERE b.userID = ? AND b.status IN ('CONFIRMED', 'PAID')
     `, [userID]);
 
-    const categoryHistory = new Set();
-    const tagHistory = new Set();
+    const categoryCounts = {};
+    const tagCounts = {};
+    let totalBookings = 0;
 
     historyRows.forEach(row => {
-        if (row.categoryName) categoryHistory.add(row.categoryName);
+        totalBookings++;
+        if (row.categoryName) {
+            categoryCounts[row.categoryName] = (categoryCounts[row.categoryName] || 0) + 1;
+        }
         if (row.tags) {
-            // Split comma-separated tags into individual items
-            row.tags.split(',').forEach(t => tagHistory.add(t.trim()));
+            row.tags.split(',').forEach(t => {
+                const tag = t.trim();
+                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
         }
     });
 
-    return { preferences, categoryHistory, tagHistory };
+    return { preferences, categoryCounts, tagCounts, totalBookings };
 }
 
-// 2. Helper: The Scoring Logic (Pure JS, no DB needed here)
 function computeMatchStats(activity, userProfile) {
     let actualScore = 0;
     let maxPossibleScore = 0;
     
-    const { preferences, categoryHistory, tagHistory } = userProfile;
-    const activityTags = activity.tagsArray || []; // Safety fallback
+    const { preferences, categoryCounts, tagCounts, totalBookings } = userProfile;
+    const activityTags = activity.tagsArray || [];
 
-    // --- A. Dietary Filter (Strict Exclusion) ---
-    if (activity.categoryName === 'Food & Beverages' && preferences.dietaryRequirements !== 'None') {
-        const hasDietary = activityTags.some(t => 
-            t.toLowerCase() === preferences.dietaryRequirements.toLowerCase()
-        );
-        if (!hasDietary) return { score: 0, max: 0 }; 
+    // --- A. Dietary Filter (Strict) ---
+    const NO_RESTRICTION_KEYWORDS = ['none', 'nil', 'no', 'null', 'n/a', '-', '', 'vacant'];
+    const userDiet = preferences.dietaryRequirements ? preferences.dietaryRequirements.toLowerCase().trim() : 'none';
+
+    if (activity.categoryName === 'Food & Beverages' && !NO_RESTRICTION_KEYWORDS.includes(userDiet)) {
+        const hasDietary = activityTags.some(t => t.toLowerCase() === userDiet);
+        if (!hasDietary) return { score: -1, max: 0 }; 
     }
 
-    // --- B. Budget Check (20 pts) ---
+    // --- B. Budget Check (Base: 30 pts) ---
     if (preferences.budgetLevel) {
-        maxPossibleScore += 20; 
+        maxPossibleScore += 30; 
         const price = parseFloat(activity.price);
         
-        if (preferences.budgetLevel === 'Low' && price <= 20) actualScore += 20;
-        else if (preferences.budgetLevel === 'Medium' && price <= 60) actualScore += 20;
-        else if (preferences.budgetLevel === 'High') actualScore += 20; // High budget matches everything
+        // Logic: If it fits the budget, full points.
+        if (preferences.budgetLevel === 'Low' && price <= 20) actualScore += 30;
+        else if (preferences.budgetLevel === 'Medium' && price <= 60) actualScore += 30;
+        else if (preferences.budgetLevel === 'High') actualScore += 30; 
     }
 
-    // --- C. Location Check (15 pts) ---
+    // --- C. Location Check (BONUS ONLY: 10 pts) ---
     if (preferences.nearbyLocation && activity.location) {
-        maxPossibleScore += 15;
         if (activity.location.toLowerCase().includes(preferences.nearbyLocation.toLowerCase())) {
-            actualScore += 15;
+            actualScore += 10; // Reduced from 15 to 10
         }
     }
 
-    // --- D. Category History Check (15 pts) ---
-    if (categoryHistory.size > 0) {
-        maxPossibleScore += 15;
-        if (categoryHistory.has(activity.categoryName)) {
-            actualScore += 15;
-        }
+    // --- D. Category History (Main Driver: 40 pts) ---
+    if (totalBookings > 0) {
+        maxPossibleScore += 40; 
+        
+        const count = categoryCounts[activity.categoryName] || 0;
+        const frequency = count / totalBookings; 
+        
+        actualScore += (frequency * 40);
     }
 
-    // --- E. Tag History Check ---    
-    let tagsMatchedCount = 0;
-    if (activityTags.length > 0) {
+    // --- E. Tag History (Bonus: 20 pts) ---
+    if (totalBookings > 0 && activityTags.length > 0) {
+        let tagScoreAccumulator = 0;
+
         activityTags.forEach(tag => {
-            if (tagHistory.has(tag)) {
-                tagsMatchedCount++;
-            }
+            const count = tagCounts[tag] || 0;
+            const frequency = count / totalBookings;
+            tagScoreAccumulator += (frequency * 10); 
         });
+
+        const finalTagBonus = Math.min(tagScoreAccumulator, 20);
+        actualScore += finalTagBonus;
     }
 
-    // 2. Award points (e.g., 5 points per matched tag, up to a max of 20 bonus points)
-    const tagBonus = Math.min(tagsMatchedCount * 5, 20); 
-    actualScore += tagBonus;
+    // Safety: Prevent divide by zero for brand new users with no preferences
     if (maxPossibleScore === 0) maxPossibleScore = 1;
 
     return { score: actualScore, max: maxPossibleScore };
 }
 
-// --- Recommendation Route ---
+// --- 2. The Route Handler ---
 
 router.get('/recommendations/:userID', async (req, res) => {
     const { userID } = req.params;
+    // console.log(`🤖 Algorithm Request (Bonus Location) for User ${userID}`);
 
     try {
         const userProfile = await getUserProfile(userID);
         
+        if (!global.db) throw new Error("Database not connected");
+
         const [activities] = await global.db.execute(`
-            SELECT 
-                a.activityID, a.activityName, a.price, a.location, 
-                a.activityPicUrl, a.tags, c.categoryName
+            SELECT a.activityID, a.activityName, a.price, a.location, 
+                   a.activityPicUrl, a.tags, c.categoryName
             FROM activity a
             JOIN category c ON a.categoryID = c.categoryID
         `);
 
-        // Calculate Scores
         let ranked = activities.map(a => {
             const tagsArray = a.tags ? a.tags.split(',').map(t => t.trim()) : [];
             const { score, max } = computeMatchStats({ ...a, tagsArray }, userProfile);
 
-            if (score === -1) return null; // Mark for deletion
+            if (score === -1) return null;
 
             let finalRatio = (score / max);
-            
-            // Cap at 1.0 (100%) in case bonus points pushed it over
             if (finalRatio > 1.0) finalRatio = 1.0; 
 
             return {
@@ -141,16 +150,14 @@ router.get('/recommendations/:userID', async (req, res) => {
         });
 
         ranked = ranked.filter(item => item !== null);
-
-        // Sort by Highest Score
         ranked.sort((a, b) => b.matchScore - a.matchScore);
 
-        // Return Top 5
         res.status(200).json(ranked.slice(0, 5));
 
     } catch (error) {
         console.error("Recommendation Error:", error);
-        res.status(500).json({ success: false, message: "Error fetching recommendations" });
+        res.status(500).json({ success: false, message: error.message });
     }
 });
+
 module.exports = router;
