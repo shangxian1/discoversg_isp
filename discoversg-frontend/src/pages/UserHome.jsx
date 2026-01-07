@@ -11,83 +11,52 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+
+// 1. Import your shared components
+import HeroCarousel from '../components/home/HeroCarousel';
+import ContentSection from '../components/home/ContentSection';
 
 const UserHome = () => {
-  // 1. Retrieve the user object from localStorage saved during login
+  // Retrieve the user object from localStorage
   const userData = JSON.parse(localStorage.getItem('user'));
 
   return (
     <Box sx={{ bgcolor: '#fff', minHeight: '100vh', pb: 5 }}>
-      {/* Hero / Carousel Section */}
-      <Box sx={{ 
-        position: 'relative', 
-        height: '400px', 
-        bgcolor: '#d9c5c5', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        px: 2
-      }}>
-        <IconButton sx={{ bgcolor: 'white' }}><ArrowBackIosNewIcon /></IconButton>
+      
+      {/* 2. Replaced the manual hero Box with your component */}
+      <HeroCarousel />
 
-        {/* Search & Badge UI */}
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        {/* Search & Badge UI moved below Hero for better visibility in UserHome */}
         <Box sx={{ 
-          position: 'absolute', 
-          top: '20px', 
-          left: '50%', 
-          transform: 'translateX(-50%)',
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          justifyContent: 'center',
+          gap: 1,
+          mb: 4
         }}>
-          <Paper elevation={3} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 400, borderRadius: '50px' }}>
-            <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
-            <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Search" />
-          </Paper>
-          <Chip
-            icon={<FavoriteBorderIcon style={{ color: 'white' }} />}
-            label="Itinerary (1)"
-            sx={{ bgcolor: '#196f75', color: 'white', height: '40px', borderRadius: '20px', px: 1 }}
-          />
         </Box>
 
-        <IconButton sx={{ bgcolor: 'white' }}><ArrowForwardIosIcon /></IconButton>
-      </Box>
-
-      {/* 2. Welcome Message Section */}
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        {/* Welcome Message Section */}
         <Box sx={{ mb: 4 }}>
-          <Box>
-            {/* Displaying the dynamic username from the database */}
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#196f75' }}>
-              Welcome back, {userData?.name || 'Explorer'}!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Ready to discover more of Singapore today?
-            </Typography>
-          </Box>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#196f75' }}>
+            Welcome back, {userData?.name || 'Explorer'}!
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Ready to discover more of Singapore today?
+          </Typography>
         </Box>
+
+        {/* 3. Inserted the ContentSection here */}
+        <ContentSection />
 
         {/* Content Grids for "For You" and "Featured" */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>For You:</Typography>
+        <Box sx={{ mt: 6, mb: 6 }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>Recommended For You:</Typography>
           <Grid container spacing={3}>
             {[1, 2, 3].map((item) => (
               <Grid item xs={12} sm={4} key={item}>
-                <Paper elevation={0} sx={{ height: '180px', bgcolor: '#e0e0e0', borderRadius: 2 }} />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>Featured:</Typography>
-          <Grid container spacing={3}>
-            {[1, 2, 3].map((item) => (
-              <Grid item xs={12} sm={4} key={item}>
-                <Paper elevation={0} sx={{ height: '180px', bgcolor: '#e0e0e0', borderRadius: 2 }} />
+                <Paper elevation={0} sx={{ height: '180px', bgcolor: '#f5f5f5', borderRadius: 2 }} />
               </Grid>
             ))}
           </Grid>
