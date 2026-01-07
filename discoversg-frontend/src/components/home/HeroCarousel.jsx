@@ -3,9 +3,9 @@ import { Box, Container, IconButton, InputBase, Paper, Button } from '@mui/mater
 import { Search as SearchIcon } from '@mui/icons-material';
 
 // Import images with updated paths
-import banner1 from '../../assets/banner1.png'; 
-import banner2 from '../../assets/banner2.png';
-import banner3 from '../../assets/banner3.png';
+import banner1 from '/assets/banner1.png'; 
+import banner2 from '/assets/banner2.png';
+import banner3 from '/assets/banner3.png';
 
 const bannerImages = [
   { id: 1, src: banner1, alt: "Singapore Banner 1" },

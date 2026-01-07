@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Container, Box, Avatar, IconButton, Menu, MenuItem, Divider, ListItemIcon } from '@mui/material';
 import { AccountCircle, Book, Login as LoginIcon, Logout, RunCircleRounded } from '@mui/icons-material';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import logo from '../../assets/discoversg.png';
+import logo from '/assets/discoversg.png';
 
 const Navbar = () => {
     const location = useLocation();
