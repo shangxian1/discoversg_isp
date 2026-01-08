@@ -20,7 +20,7 @@ const LocalVideoTemplate = ({localVideo}) => {
           height="700"
           src={localVideo.mediaUrl}
           title="YouTube Video Player"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
           allowFullScreen
         />
 

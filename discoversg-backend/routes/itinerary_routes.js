@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../database'); // Assuming your DB connection file is here
 
 // GET itinerary by ID with items and activity details
-router.get('/:id', (req, res) => {
+router.get('/itinerary/:id', (req, res) => {
     const itineraryId = req.params.id;
 
     // SQL query to join Itinerary, ItineraryItem, and Activity tables
