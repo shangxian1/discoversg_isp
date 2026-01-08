@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -8,66 +9,87 @@ import {
   CardMedia,
   Chip,
   CardActionArea,
+  Container
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
-// 1. Manually import your test images
-import nationalGalleryImg from '/assets/national_gallery.jpg';
-import artScienceMuseumImg from '/assets/artscience_museum.jpg';
-import asianMuseumImg from '/assets/asian_museum.jpg';
-import gbtbImg from '/assets/gbtb.jpg';
-import macritchieImg from '/assets/macritchie.jpg';
+const GemCard = ({ item }) => {
+  const navigate = useNavigate();
 
-const GemCard = ({ title, location, price, category, image, matchScore }) => {
-
-  // 2. Create a mapping object
-  // This connects the string from your database to the imported file
   const imageMap = {
-    'national_gallery.jpg': nationalGalleryImg,
-    'artscience_museum.jpg': artScienceMuseumImg,
-    'asian_museum.jpg': asianMuseumImg,
-    'gbtb.jpg':gbtbImg,
-    'macritchie.jpg': macritchieImg,
+    'national_gallery.jpg': '/assets/national_gallery.jpg',
+    'artscience_museum.jpg': '/assets/artscience_museum.jpg',
+    'asian_museum.jpg': '/assets/asian_museum.jpg',
+    'gbtb.jpg': '/assets/gbtb.jpg',
+    'macritchie.jpg': '/assets/macritchie.jpg',
   };
 
-  // 3. Select the image or a local fallback (avoiding the broken placeholder URL)
-  const finalImage = imageMap[image] || '';
-  
+  const finalImage = imageMap[item.activityPicUrl] || '';
+
+  const handleNavigate = () => {
+    navigate(`/activity/${item.activityID}`, { 
+      state: { ...item, finalImage } 
+    });
+  };
 
   return (
-    <Card sx={{ height: '100%', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      <CardActionArea sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <CardMedia
-          component="img"
-          height="240"
-          image={finalImage}
-          alt={title}
-          sx={{
-            height: 240,           // Forces a consistent height
-            width: '100%',         // Fills the card width
-            objectFit: 'cover',    // Crops the image to fit without distortion
-            objectPosition: 'center', // Keeps the center of the image visible
-            bgcolor: '#f5f5f5'// Shows a grey box if the image is missing
-          }}
-        />
-        <CardContent sx={{ width: '100%', flexGrow: 1 }}>
-          <Chip
-            label={category || "Activity"}
-            size="small"
-            color="primary"
-            variant="outlined"
-            sx={{ fontWeight: 'bold', mb: 1 }}
+    <Card 
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        width: '100%', // Card must take 100% of Grid item width
+        height: '100%', 
+        borderRadius: 3, 
+        overflow: 'hidden',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      }}
+    >
+      <CardActionArea 
+        onClick={handleNavigate} 
+        sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'stretch' 
+        }}
+      >
+        <Box sx={{ width: '100%', position: 'relative' }}>
+          <CardMedia
+            component="img"
+            image={finalImage}
+            alt={item.activityName}
+            sx={{ 
+              // FORCE SETTINGS
+              width: '100% !important', // Force width to match the box
+              height: '200px',           // Hard-coded height for perfect alignment
+              objectFit: 'cover',        // Crop instead of stretch
+              display: 'block',
+              margin: '0 auto'
+            }}
           />
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            {title}
+        </Box>
+        <CardContent sx={{ flexGrow: 1, p: 2 }}>
+          <Chip 
+            label={item.categoryName || "Activity"} 
+            size="small" 
+            variant="outlined"
+            sx={{ mb: 1, fontWeight: 'bold' }} 
+          />
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700, 
+              fontSize: '1.1rem',
+              lineHeight: 1.2,
+              mb: 1
+            }}
+          >
+            {item.activityName}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, color: 'text.secondary' }}>
-            <LocationOnIcon sx={{ fontSize: 16, mr: 0.5 }} />
-            <Typography variant="body2">{location}</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-            <Typography variant="body2" fontWeight="bold" color="text.primary">
-              {price > 0 ? `$${price}` : 'Free'}
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mt: 'auto' }}>
+            <LocationOnIcon sx={{ fontSize: 16, mr: 0.5, color: '#d31111' }} />
+            <Typography variant="body2" noWrap sx={{ maxWidth: '100%' }}>
+              {item.location}
             </Typography>
           </Box>
         </CardContent>
@@ -80,29 +102,29 @@ const ContentSection = ({ title, items }) => {
   const safeItems = items || [];
 
   return (
-    <Box sx={{ mb: 8 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
         {title || "Recommended For You"}
       </Typography>
 
       <Grid container spacing={3}>
-        {safeItems.length === 0 ? (
-          <Typography sx={{ ml: 3 }} color="text.secondary">No activities found.</Typography>
-        ) : (
-          safeItems.map((item) => (
-            <Grid key={item.activityID} item xs={12} sm={6} md={4}>
-              <GemCard
-                title={item.activityName}
-                location={item.location}
-                price={item.price}
-                category={item.categoryName}
-                image={item.activityPicUrl}
-              />
-            </Grid>
-          ))
-        )}
+        {safeItems.map((item) => (
+          <Grid 
+            key={item.activityID} 
+            item 
+            xs={12} 
+            sm={6} 
+            md={4} 
+            sx={{ 
+              display: 'flex', // Ensures the card fills the grid item height
+              justifyContent: 'center' 
+            }}
+          >
+            <GemCard item={item} />
+          </Grid>
+        ))}
       </Grid>
-    </Box>
+    </Container>
   );
 };
 

@@ -21,6 +21,7 @@
   import Activities from './pages/ActivitiesPage';
   import Profile from './pages/Profile';
   import ItineraryPage from './pages/ItineraryPage';
+  import ActivityDetails from './pages/ActivityDetails';
 
   const HomeContent = () => (
     <>
@@ -73,6 +74,7 @@
             <Route path='/feed' element={<Feed />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/itinerary" element={<ItineraryPage />} />
+            <Route path="/activity/:id" element={<ActivityDetails />} /> 
           </Route>
         </Routes>
       </ThemeProvider>
