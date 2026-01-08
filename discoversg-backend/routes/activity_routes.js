@@ -11,12 +11,14 @@ router.get('/activities', async (req, res) => {
             return res.status(500).json({ error: 'Database not connected' });
         }
 
+        // 1. Execute query to get all fields including 'description'
         const [rows] = await db.execute(`
             SELECT
                 a.activityID AS id,
                 a.activityName AS title,
                 c.categoryName AS category,
-                a.location AS description,
+                a.location AS location,
+                a.description AS description, 
                 a.price AS price,
                 a.activityPicUrl AS image
             FROM activity a
@@ -24,14 +26,24 @@ router.get('/activities', async (req, res) => {
             ORDER BY a.activityID ASC
         `);
 
-        const formatted = rows.map(row => ({
-            id: row.id,
-            title: row.title,
-            category: row.category ?? '',
-            description: row.description ?? '',
-            price: row.price,
-            image: row.image ?? 'https://placehold.co/200',
-        }));
+        // 2. Format the data for the React frontend
+        const formatted = rows.map(row => {
+            // FIX: Remove '/public' from the path. 
+            // Files in 'public/assets/' are served at '/assets/'
+            const imagePath = (row.image && row.image !== '_') 
+                ? `/assets/${row.image}` 
+                : 'https://placehold.co/600x400?text=No+Image';
+
+            return {
+                id: row.id,
+                title: row.title,
+                category: row.category ?? 'General',
+                location: row.location ?? '',
+                description: row.description ?? '', // Ensure this maps to your card
+                price: row.price,
+                image: imagePath,
+            };
+        });
 
         return res.status(200).json(formatted);
     } catch (error) {
