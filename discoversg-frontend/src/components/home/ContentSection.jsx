@@ -12,11 +12,11 @@ import {
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 // 1. Manually import your test images
-import nationalGalleryImg from '../../assets/national_gallery.jpg';
-import artScienceMuseumImg from '../../assets/artscience_museum.jpg';
-import asianMuseumImg from '../../assets/asian_museum.jpg';
-import gbtbImg from '../../assets/gbtb.jpg';
-import macritchieImg from '../../assets/macritchie.jpg';
+import nationalGalleryImg from '/assets/national_gallery.jpg';
+import artScienceMuseumImg from '/assets/artscience_museum.jpg';
+import asianMuseumImg from '/assets/asian_museum.jpg';
+import gbtbImg from '/assets/gbtb.jpg';
+import macritchieImg from '/assets/macritchie.jpg';
 
 const GemCard = ({ title, location, price, category, image, matchScore }) => {
 
@@ -32,6 +32,7 @@ const GemCard = ({ title, location, price, category, image, matchScore }) => {
 
   // 3. Select the image or a local fallback (avoiding the broken placeholder URL)
   const finalImage = imageMap[image] || '';
+  
 
   return (
     <Card sx={{ height: '100%', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
