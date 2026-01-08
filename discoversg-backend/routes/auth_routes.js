@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const [rows] = await global.db.execute(
-            'SELECT userID, userName, roleID, profilePicUrl, userEmail, userDescription, CHAR_LENGTH(userPassword) as passLength FROM user WHERE userName = ? AND userPassword = ?',
+            'SELECT userID, userName, profilePicUrl, role.roleName, userEmail, userDescription, CHAR_LENGTH(userPassword) as passLength FROM user JOIN role ON role.roleID = user.roleID WHERE userName = ? AND userPassword = ?',
             [username, password]
         );
         if (rows.length > 0) {
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
                 user: { 
                     id: user.userID, 
                     name: user.userName, 
-                    role: user.roleID, 
+                    role: user.roleName, 
                     email: user.userEmail, 
                     profilePicUrl: user.profilePicUrl,
                     userDescription: user.userDescription,

@@ -6,7 +6,7 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/Twitter'; // If this fails, use '@mui/icons-material/Twitter'
 
 // 2. Import your logo (ensure path is correct)
-import logo from '../../assets/discoversg.png';
+import logo from '/assets/discoversg.png';
 
 const Footer = () => {
   // Helper array for the social icons
