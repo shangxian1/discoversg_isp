@@ -75,7 +75,20 @@ const ActivityDetails = () => {
               </Typography>
             </Box>
 
-            <Button variant="contained" size="large" sx={{ bgcolor: '#1a8a8a', px: 8 }}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ bgcolor: '#1a8a8a', px: 8 }}
+              onClick={() =>
+                navigate('/payment', {
+                  state: {
+                    activityId: id,
+                    activityName: activity.activityName,
+                    price: activity.price,
+                  },
+                })
+              }
+            >
               Add to Itinerary
             </Button>
           </Box>

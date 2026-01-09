@@ -22,6 +22,9 @@
   import Profile from './pages/Profile';
   import ItineraryPage from './pages/ItineraryPage';
   import ActivityDetails from './pages/ActivityDetails';
+  import Payment from './pages/Payment';
+  import PaymentSuccess from './pages/PaymentSuccess';
+  import PaymentCancel from './pages/PaymentCancel';
 
   const HomeContent = () => (
     <>
@@ -75,6 +78,9 @@
             <Route path="/profile" element={<Profile />} />
             <Route path="/itinerary" element={<ItineraryPage />} />
             <Route path="/activity/:id" element={<ActivityDetails />} /> 
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
           </Route>
         </Routes>
       </ThemeProvider>
