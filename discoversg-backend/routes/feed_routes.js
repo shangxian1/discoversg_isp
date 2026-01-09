@@ -117,5 +117,30 @@ router.post('/save-unsave-media', async (req, res) => {
   }
 });
 
+//Retrieve saved media
+router.get('/saved-media', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM savedmedia INNER JOIN user ON user.userID = savedmedia.userID INNER JOIN post ON post.postID = savedmedia.postID');
+    if (rows.length > 0) {
+      const formattedRows = rows.map(row => ({
+        savedMediaID: row.savedMediaID,
+        title: row.title,
+        user: {
+          userName: row.userName,
+          profilePic: row.profilePicUrl
+        },
+        mediaUrl: row.mediaUrl,
+        noOfLikes: row.noOfLikes,
+      }));
+      res.status(200).json(formattedRows);
+    } else {
+      res.status(200).json({ message: "No saved media found." })
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
 
 module.exports = router;

@@ -1,50 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Avatar, Stack, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
+import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
 import { ToggleFeedButton, ToggleCategoryButton } from '../components/feed/Buttons';
 import { Search as SearchIcon } from '@mui/icons-material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInView } from 'react-intersection-observer';
 
-import Feeds from '../components/feed/LocalVideoTemplate';
 import LocalVideoTemplate from '../components/feed/LocalVideoTemplate';
 import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
+import SavedCardTemplate from '../components/feed/SavedCardTemplate';
 
-function Feed() {
+const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
   const [plannerGuides, setPlannerGuides] = useState([]);
+  const [savedLocalVideos, setSavedLocalVideos] = useState([]);
   const userData = JSON.parse(localStorage.getItem('user'));
-  const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    fetch('http://localhost:3000/api/local-videos')
-      .then(res => res.json())
-      .then(data => {
-        setLocalVideos(data);
-      });
-
-    fetch('http://localhost:3000/api/planner-guides')
-      .then(res => res.json())
-      .then(data => {
-        setPlannerGuides(data);
-      });
-    console.log(plannerGuides);
-  }, []);
+  const { ref, inView } = useInView();
 
   const [activeScreen, setActiveScreen] = useState('allFeeds');
   const [activeCategory, setActiveCategory] = useState('localVideos');
   const [isRecentChecked, setRecentChecked] = useState(false);
   const [isLikesChecked, setLikesChecked] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleRecentChange = (event) => {
-    setRecentChecked(event.target.checked);
-  }
+  const handleRecentChange = (event) => setRecentChecked(event.target.checked);
+  const handleLikesChange = (event) => setLikesChecked(event.target.checked);
 
-  const handleLikesChange = (event) => {
-    setLikesChecked(event.target.checked);
-  }
+  const fetchLocalVideos = async ({ pageParam = 1, queryKey }) => {
+    const [_key, { isRecent, isLikes, search }] = queryKey;
+
+    //Delayed to see loading sign
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const res = await fetch('http://localhost:3000/api/local-videos');
+    const data = await res.json();
+    let filteredData = [...data];
+    setLocalVideos(data);
+
+    //Sorting logic
+    if (isRecent) {
+      filteredData.sort((a, b) => new Date(b.datePosted) - new Date(a.datePosted));
+    } else if (isLikes) {
+      filteredData.sort((a, b) => b.noOfLikes - a.noOfLikes);
+    }
+
+    //Search logic
+    if (search && search.trim().length > 0) {
+      filteredData = filteredData.filter(video =>
+        video.title.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Slice the data (Displays 2 posts for each call)
+    return filteredData.slice((pageParam - 1) * 2, pageParam * 2);
+  };
+
+  //Prevent client overload: using "useInfiniteQuery" to display two posts at a time
+  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status } =
+    useInfiniteQuery({
+      queryKey: ['videos', { isRecent: isRecentChecked, isLikes: isLikesChecked, search: searchQuery }],
+      queryFn: fetchLocalVideos,
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        // If the last page returned data, increment
+        // Otherwise, return undefined
+        return lastPage.length > 0 ? allPages.length + 1 : undefined;
+      },
+    });
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/planner-guides')
+      .then(res => res.json())
+      .then(data => {
+        setPlannerGuides(data);
+      });
+    fetch('http://localhost:3000/api/saved-media')
+      .then(res => res.json())
+      .then(data => {
+        setSavedLocalVideos(data);
+      });
+  }, []);
+
+  //Detection when the viewport has reached to the end of the page
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   return <>
     <Grid container spacing={5} className="m-5">
+
+      {/* Control Panel */}
       <Grid size={3} rowSpacing={10} sx={{ backgroundColor: '#ECECEE', borderRadius: '0.5rem', position: 'sticky', top: '5%', height: '100%' }}>
         <Stack direction="row" spacing={2} className='p-4 pb-4'>
           <Avatar src={userData.profilePicUrl && '/broken-image.jpg'} sx={{ bgcolor: '#b39ddb', border: '2px solid white' }}>
@@ -84,31 +131,66 @@ function Feed() {
                 />
               } label="Top Rated" />
             }
-
           </FormGroup>
         </Stack>
       </Grid>
 
+
       <Grid size={9} sx={{ height: '100%' }}>
+        {/* Header & Search Bar */}
         <Container className='m-3! mx-0! px-0! flex justify-between items-center'>
-          <p className='text-3xl font-bold'>Feed</p>
+          <p className='text-3xl font-bold'>{activeScreen == 'allFeeds' ? 'Feeds' : 'Saved Feeds'}</p>
           <div className='flex justify-between w-max'>
             <Paper component="form" sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: 5, boxShadow: 3 }}>
               <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
-              <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Search..." />
-              <Button variant="contained" color="secondary" sx={{ borderRadius: 5, px: 4 }}>Search</Button>
+              <InputBase sx={{ ml: 1, flex: 1 }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." />
             </Paper>
           </div>
         </Container>
-        {activeScreen == 'allFeeds' && activeCategory == 'localVideos' &&
-          localVideos.map((localVideo) => <LocalVideoTemplate localVideo={localVideo} key={localVideo.postID}></LocalVideoTemplate>)
-        }
+
+        {/* Local Videos */}
+        {activeScreen == 'allFeeds' && activeCategory == 'localVideos' && (
+          <>
+            {data?.pages.map((page, index) => (
+              <div key={index}>
+                {page.map((localVideo) => (
+                  <LocalVideoTemplate key={localVideo.postID} localVideo={localVideo} />
+                ))}
+              </div>
+            ))}
+            {hasNextPage && (
+              <div ref={ref}>
+                {isFetchingNextPage ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+                    <CircularProgress />
+                    <p className="text-xl ml-2 self-center font-bold">Loading more videos...</p>
+                  </Box>
+                ) : (
+                  <p>Nothing more to load</p>
+                )}
+              </div>
+            )}
+            {status == 'pending' && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', marginTop: '2rem' }}>
+                <CircularProgress className='self-center' />
+                <p className="text-xl mt-5 self-center font-bold">Loading Feed...</p>
+              </Box>
+            )
+            }
+          </>
+        )}
+
+        {/* Planner Guides */}
         <Grid container spacing={3} sx={{ marginTop: '1.5rem' }}>
           {activeScreen == 'allFeeds' && activeCategory == 'plannerGuides' &&
             plannerGuides.map((plannerGuide) => <PlannerGuideTemplate guide={plannerGuide} key={plannerGuide.guideID}></PlannerGuideTemplate>)
           }
         </Grid>
 
+        {/* Saved Local Videos */}
+        {activeScreen == 'savedFeeds' && activeCategory == 'localVideos' && (
+          savedLocalVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedLocalVideosID}></SavedCardTemplate>)
+        )}
       </Grid>
     </Grid>
   </>
