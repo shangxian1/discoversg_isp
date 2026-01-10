@@ -1,30 +1,7 @@
 import { Grid, Avatar, Button, Card, CardHeader, CardContent, CardActions, CardMedia, IconButton } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 
-const LocalVideoTemplate = ({ localVideo }) => {
-  const handleClick = async () => {
-    const myHeaders = new Headers();
-      const userData = JSON.parse(localStorage.getItem('user'));
-    myHeaders.append("Content-Type", "application/json");
-
-    const raw = {
-      "userID": userData.id,
-      "postID": localVideo.postID,
-    }
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: JSON.stringify(raw),
-      redirect: "follow"
-    };
-
-    fetch("http://localhost:3000/api/save-unsave-media", requestOptions)
-      .then((response) => response.json())
-      .then((result) => console.log(result))
-      .catch((error) => console.error(error));
-  }
-
+const LocalVideoTemplate = ({ localVideo, onSave }) => {
   return <>
     <Grid container spacing={3} sx={{ marginTop: '1.5rem' }}>
       {/* Main template for Youtube videos */}
@@ -59,7 +36,7 @@ const LocalVideoTemplate = ({ localVideo }) => {
         </CardContent>
         <CardActions sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <p className='text-l'>{localVideo.datePosted.slice(0, 10)}</p>
-          <Button variant="contained" onClick={handleClick} sx={{ backgroundColor: '#6750A4' }}>Save Video</Button>
+          <Button variant="contained" onClick={() => onSave(localVideo)} sx={{ backgroundColor: '#6750A4' }}>{localVideo.isSaved ? 'Unsave Video' : 'Save Video'}</Button>
         </CardActions>
 
       </Card>

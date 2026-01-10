@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel, Snackbar, Fade } from '@mui/material';
 import { ToggleFeedButton, ToggleCategoryButton } from '../components/feed/Buttons';
 import { Search as SearchIcon } from '@mui/icons-material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -9,22 +9,53 @@ import { useInView } from 'react-intersection-observer';
 import LocalVideoTemplate from '../components/feed/LocalVideoTemplate';
 import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
 import SavedCardTemplate from '../components/feed/SavedCardTemplate';
+import SnackBarDialog from '../components/layout/SnackBar';
 
 const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
   const [plannerGuides, setPlannerGuides] = useState([]);
   const [savedLocalVideos, setSavedLocalVideos] = useState([]);
+  const [savedPlannerGuides, setSavedPlannerGuides] = useState([]);
   const userData = JSON.parse(localStorage.getItem('user'));
   const { ref, inView } = useInView();
+  const snackRef = useRef();
 
   const [activeScreen, setActiveScreen] = useState('allFeeds');
   const [activeCategory, setActiveCategory] = useState('localVideos');
-  const [isRecentChecked, setRecentChecked] = useState(false);
+  const [isRecentChecked, setRecentChecked] = useState(true);
   const [isLikesChecked, setLikesChecked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleRecentChange = (event) => setRecentChecked(event.target.checked);
   const handleLikesChange = (event) => setLikesChecked(event.target.checked);
+
+  const handleSave = async (videoData) => {
+    const myHeaders = new Headers();
+    const userData = JSON.parse(localStorage.getItem('user'));
+    myHeaders.append("Content-Type", "application/json");
+    console.log(videoData);
+    const raw = {
+      "userID": userData.id,
+      "mediaID": videoData.savedMediaCode,
+    }
+
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: JSON.stringify(raw),
+      redirect: "follow"
+    };
+
+    fetch("http://localhost:3000/api/save-unsave-media", requestOptions)
+      .then((response) => response.json())
+      .then((result) => {
+        snackRef.current.handleState(result.message);
+        setActiveScreen('savedFeeds');
+        window.scrollTo(0, 0);
+        
+      })
+      .catch((error) => console.error(error));
+  }
 
   const fetchLocalVideos = async ({ pageParam = 1, queryKey }) => {
     const [_key, { isRecent, isLikes, search }] = queryKey;
@@ -57,7 +88,8 @@ const Feed = () => {
   //Prevent client overload: using "useInfiniteQuery" to display two posts at a time
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status } =
     useInfiniteQuery({
-      queryKey: ['videos', { isRecent: isRecentChecked, isLikes: isLikesChecked, search: searchQuery }],
+      //Refresh when variables below changed
+      queryKey: ['videos', { isRecent: isRecentChecked, isLikes: isLikesChecked, search: searchQuery, localVideos }],
       queryFn: fetchLocalVideos,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
@@ -73,12 +105,29 @@ const Feed = () => {
       .then(data => {
         setPlannerGuides(data);
       });
-    fetch('http://localhost:3000/api/saved-media')
+    fetch('http://localhost:3000/api/saved-videos')
       .then(res => res.json())
       .then(data => {
+        isLikesChecked && data.sort((a, b) => b.noOfLikes - a.noOfLikes);
+        if (searchQuery && searchQuery.trim().length > 0) {
+          data = data.filter(video =>
+            video.title.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
         setSavedLocalVideos(data);
       });
-  }, []);
+    fetch('http://localhost:3000/api/saved-guides')
+      .then(res => res.json())
+      .then(data => {
+        isLikesChecked && data.sort((a, b) => b.noOfLikes - a.noOfLikes);
+        if (searchQuery && searchQuery.trim().length > 0) {
+          data = data.filter(video =>
+            video.title.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
+        setSavedPlannerGuides(data);
+      });
+  }, [savedLocalVideos, isLikesChecked, searchQuery]);
 
   //Detection when the viewport has reached to the end of the page
   useEffect(() => {
@@ -154,7 +203,7 @@ const Feed = () => {
             {data?.pages.map((page, index) => (
               <div key={index}>
                 {page.map((localVideo) => (
-                  <LocalVideoTemplate key={localVideo.postID} localVideo={localVideo} />
+                  <LocalVideoTemplate key={localVideo.postID} localVideo={localVideo} onSave={handleSave} />
                 ))}
               </div>
             ))}
@@ -183,16 +232,23 @@ const Feed = () => {
         {/* Planner Guides */}
         <Grid container spacing={3} sx={{ marginTop: '1.5rem' }}>
           {activeScreen == 'allFeeds' && activeCategory == 'plannerGuides' &&
-            plannerGuides.map((plannerGuide) => <PlannerGuideTemplate guide={plannerGuide} key={plannerGuide.guideID}></PlannerGuideTemplate>)
+            plannerGuides.map((plannerGuide) => <PlannerGuideTemplate guide={plannerGuide} key={plannerGuide.guideID} onSave={handleSave}></PlannerGuideTemplate>)
           }
         </Grid>
 
         {/* Saved Local Videos */}
         {activeScreen == 'savedFeeds' && activeCategory == 'localVideos' && (
-          savedLocalVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedLocalVideosID}></SavedCardTemplate>)
+          Array.isArray(savedLocalVideos) ? savedLocalVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedLocalVideos.message
+        )}
+        
+        {/* Saved Planner Guides */}
+        {activeScreen == 'savedFeeds' && activeCategory == 'plannerGuides' && (
+          Array.isArray(savedPlannerGuides) ? savedPlannerGuides.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedPlannerGuides.message
         )}
       </Grid>
     </Grid>
+    {/* Display snackbar when save/unsave video */}
+    <SnackBarDialog ref={snackRef}></SnackBarDialog>
   </>
 }
 
