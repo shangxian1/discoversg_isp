@@ -25,6 +25,7 @@ import ActivityDetails from './pages/ActivityDetails';
 import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
+import YourActivities from './pages/YourActivities'
 
 const HomeContent = () => (
   <>
@@ -78,6 +79,8 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/itinerary" element={<ItineraryPage />} />
           <Route path="/activity/:id" element={<ActivityDetails />} />
+          <Route path="/your-activities" element={<YourActivities />} />
+
         </Route>
       </Routes>
     </ThemeProvider>
