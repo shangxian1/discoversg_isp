@@ -26,7 +26,7 @@ export default function Activities() {
                 activity?.title,
                 activity?.category,
                 activity?.location,
-                activity?.description,
+                activity?.summary,
             ].filter(Boolean).join(' ').toLowerCase();
 
             return haystack.includes(normalizedQuery);

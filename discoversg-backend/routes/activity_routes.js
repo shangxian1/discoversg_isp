@@ -18,7 +18,9 @@ router.get('/activities', async (req, res) => {
                 a.activityName AS title,
                 c.categoryName AS category,
                 a.location AS location,
-                a.description AS description, 
+                a.summary AS summary,
+                a.description AS description,
+                a.address AS address,
                 a.price AS price,
                 a.activityPicUrl AS image
             FROM activity a
@@ -39,7 +41,9 @@ router.get('/activities', async (req, res) => {
                 title: row.title,
                 category: row.category ?? 'General',
                 location: row.location ?? '',
+                summary: row.summary ?? '',
                 description: row.description ?? '', // Ensure this maps to your card
+                address: row.address ?? '',
                 price: row.price,
                 image: imagePath,
             };
