@@ -19,7 +19,7 @@ export default function ActivityCard({ activity, featured }) {
   const category = activity?.category ?? '';
   const location = activity?.location ?? '';
   const address = activity?.address ?? '';
-  
+
   // Ensure these match the keys in your activity_routes.js 'formatted' object
   const summary = activity?.summary ?? '';
   const description = activity?.description ?? '';
@@ -48,42 +48,47 @@ export default function ActivityCard({ activity, featured }) {
     price: price,
     finalImage: imageUrl
   };
+  return (
+    <Card
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 4,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+      }}
+    >
+      <CardMedia component="img" height="160" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
 
-  // 2. Compact Layout (Grid View)
-  if (compact) {
-    return (
-      <Card
-        sx={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: 4,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-        }}
-      >
-        <CardMedia component="img" height="160" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
+      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="caption" color="primary" fontWeight="bold" sx={{ textTransform: 'uppercase', fontSize: '1rem', display: 'block' }}>
+              {location}
+            </Typography>
+            {featured && <Typography variant="caption" color="primary" fontWeight="bold" sx={{ textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+              {address}
+            </Typography>}
+          </Box>
+          {featured && <Chip label={category} sx={{ bgcolor: '#ccfbf1', color: '#115e59', fontWeight: 'bold' }} />}
+        </Box>
 
-        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-          <Typography variant="caption" color="primary" fontWeight="bold" sx={{ textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-            {location}
-          </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 1, lineHeight: 1.3 }}>
+          {title}
+        </Typography>
 
-          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 1, lineHeight: 1.3 }}>
-            {title}
-          </Typography>
-
-          {/* FIXED: Explicitly rendering the 'summary' variable here */}
-          <Typography variant="body2" color="text.secondary" sx={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontSize: '0.85rem',
-            mb: 1
-          }}>
-            {summary}
-          </Typography>
-        </CardContent>
+        {/* FIXED: Explicitly rendering the 'summary' variable here */}
+        <Typography variant="body2" color="text.secondary" sx={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          fontSize: '0.85rem',
+          mb: 1
+        }}>
+          {featured ? description : summary}
+        </Typography>
+      </CardContent>
 
       <Divider variant="middle" sx={{ opacity: 0.6 }} />
 
@@ -99,7 +104,7 @@ export default function ActivityCard({ activity, featured }) {
           disableElevation
           sx={{ bgcolor: '#0d9488', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
         >
-          {featured ? 'Explore Details' : 'View' }
+          {featured ? 'Explore Details' : 'View'}
         </Button>
       </CardActions>
     </Card>
