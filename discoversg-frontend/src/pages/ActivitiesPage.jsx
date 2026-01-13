@@ -3,6 +3,7 @@ import ActivityCard from '../components/activity/ActivityCard';
 import ItineraryCard from '../components/activity/ItineraryCard';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import ItineraryTimeline from '../components/activity/ItineraryTimeline';
 
 export default function Activities() {
     // 1. Data State
@@ -67,7 +68,7 @@ export default function Activities() {
         return matchesSearch && matchesCategory && matchesLocation && matchesBudget;
     });
 
-    const featuredActivity = filteredActivities[0];
+    const featuredActivity = filteredActivities[1];
     const gridActivities = filteredActivities.slice(1);
 
     return (
@@ -95,20 +96,20 @@ export default function Activities() {
                 </div>
 
                 {/* Featured + Itinerary (Unchanged) */}
-                <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
+                <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-6 sm:grid-cols-2">
+                    <div className="lg:col-span-3 h-fit">
                         <h2 className="text-lg font-semibold mb-3">Featured Section</h2>
                         {featuredActivity ? (
-                            <ActivityCard key={featuredActivity.id} activity={featuredActivity} featured />
+                            <ActivityCard key={featuredActivity.id} activity={featuredActivity} featured/>
                         ) : (
                             <div className="p-10 text-center text-gray-500 bg-gray-50 rounded-xl">
                                 No activities found.
                             </div>
                         )}
                     </div>
-                    <div>
+                    <div className='lg:col-span-3' style={{ height: '600px', overflowY: 'hidden'}}>
                         <h2 className="text-lg font-semibold mb-3">Itinerary</h2>
-                        <ItineraryCard itinerary={itinerary} />
+                        <ItineraryTimeline itinerary={itinerary} />
                     </div>
                 </div>
 
