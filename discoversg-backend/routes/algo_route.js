@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 require('../database'); 
 
-console.log("✅ ALGO ROUTES FILE LOADED! (Bonus Location Logic)");
+console.log("ALGO ROUTES FILE LOADED! (Bonus Location Logic)");
 
 // --- 1. Helper Functions ---
 
@@ -119,8 +119,6 @@ function computeMatchStats(activity, userProfile) {
 
 router.get('/recommendations/:userID', async (req, res) => {
     const { userID } = req.params;
-    // console.log(`🤖 Algorithm Request (Bonus Location) for User ${userID}`);
-
     try {
         const userProfile = await getUserProfile(userID);
         

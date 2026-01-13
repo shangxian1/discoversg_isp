@@ -13,6 +13,7 @@ const itineraryRoutes = require('./routes/itinerary_routes');
 const feedRoutes = require('./routes/feed_routes');
 const algoRoutes = require('./routes/algo_route');
 const paymentRoutes = require('./routes/payment_routes');
+const historyRoutes = require('./routes/history_route');
 
 app.use(cors());
 app.use(express.json());
@@ -25,5 +26,6 @@ app.use('/api', authRoutes);
 app.use('/api', algoRoutes);
 app.use('/api', feedRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api',historyRoutes);
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));
