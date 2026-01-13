@@ -79,6 +79,9 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/itinerary" element={<ItineraryPage />} />
           <Route path="/activity/:id" element={<ActivityDetails />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="/your-activities" element={<YourActivities />} />
 
         </Route>

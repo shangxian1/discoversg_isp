@@ -1,4 +1,6 @@
-require('dotenv').config();
+const path = require('path');
+
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const cors = require('cors');
 const express = require('express');
@@ -14,6 +16,7 @@ const feedRoutes = require('./routes/feed_routes');
 const algoRoutes = require('./routes/algo_route');
 const paymentRoutes = require('./routes/payment_routes');
 const historyRoutes = require('./routes/history_route');
+const bookingRoutes = require('./routes/booking_routes');
 
 app.use(cors());
 app.use(express.json());
@@ -27,5 +30,6 @@ app.use('/api', algoRoutes);
 app.use('/api', feedRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api',historyRoutes);
+app.use('/api', bookingRoutes);
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));

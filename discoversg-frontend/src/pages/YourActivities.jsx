@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -10,70 +10,122 @@ export default function HistoryPage() {
     const [history, setHistory] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     // 1. Get Logged In User ID
-    // If no user is logged in, it defaults to ID 1 for testing
-    const userData = JSON.parse(localStorage.getItem('user'));
-    const userID = userData?.userID || 1; 
+    const user = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user') || 'null');
+        } catch {
+            return null;
+        }
+    })();
+
+    // Support both shapes: { id } or { userID }
+    const userId = Number(user?.id ?? user?.userID);
+
+    const resolveImageUrl = (raw) => {
+        const value = String(raw ?? '').trim();
+        if (!value || value === '_') return 'https://placehold.co/600x400?text=No+Image';
+        if (value.startsWith('http://') || value.startsWith('https://')) return value;
+        if (value.startsWith('/assets/')) return value;
+        if (value.startsWith('/')) return value;
+        return `/assets/${value}`;
+    };
 
     // 2. Fetch Real Data from Backend
     useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const response = await fetch(`http://localhost:3000/api/history/${userID}`);
-                const data = await response.json();
-                
-                // If the user has no history, backend might return empty array.
-                if (Array.isArray(data)) {
-                    setHistory(data);
-                } else {
-                    console.error("Unexpected data format:", data);
-                }
-            } catch (err) {
-                console.error("Failed to load history:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!Number.isInteger(userId) || userId <= 0) {
+            setError('Please log in to view your paid activity history.');
+            setLoading(false);
+            return;
+        }
 
-        fetchHistory();
-    }, [userID]);
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoading(true);
+                setError('');
+
+                const response = await fetch(`http://localhost:3000/api/bookings/paid/${userId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data?.error || 'Failed to load paid activity history');
+                }
+
+                if (!cancelled) setHistory(Array.isArray(data) ? data : []);
+            } catch (err) {
+                if (!cancelled) setError(err?.message || 'Failed to load paid activity history');
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [userId]);
 
     // 3. Remove Item Function (Connects to DB)
     const handleRemove = async (bookingID) => {
-        if (!window.confirm("Are you sure you want to remove this booking?")) return;
+        if (!Number.isInteger(userId) || userId <= 0) {
+            setError('Please log in to manage your history.');
+            return;
+        }
+
+        if (!window.confirm('Remove this activity? If eligible, a refund will be requested.')) return;
 
         try {
-            const res = await fetch(`http://localhost:3000/api/history/${bookingID}`, { 
-                method: 'DELETE' 
+            // 1) Try refund first (server enforces policy).
+            const refundRes = await fetch('http://localhost:3000/api/payments/refund', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, bookingId: bookingID }),
             });
 
-            if (res.ok) {
-                // Remove from UI immediately so it feels fast
-                setHistory(prev => prev.filter(item => item.bookingID !== bookingID));
-            } else {
-                alert("Failed to remove booking.");
+            const refundData = await refundRes.json();
+
+            if (refundRes.ok) {
+                setHistory((prev) => prev.filter((item) => item.bookingID !== bookingID));
+                return;
             }
-        } catch (error) {
-            console.error("Error removing booking:", error);
+
+            // 2) If refund isn't allowed, offer cancel/hide without refund.
+            const refundError = refundData?.error || 'Refund not available.';
+            const proceed = window.confirm(`${refundError}\n\nRemove from history without refund instead?`);
+            if (!proceed) return;
+
+            const cancelRes = await fetch('http://localhost:3000/api/bookings/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, bookingId: bookingID }),
+            });
+
+            const cancelData = await cancelRes.json();
+            if (!cancelRes.ok) {
+                throw new Error(cancelData?.error || 'Failed to remove booking');
+            }
+
+            setHistory((prev) => prev.filter((item) => item.bookingID !== bookingID));
+        } catch (e) {
+            setError(e?.message || 'Failed to remove booking');
         }
     };
 
     // 4. Filter Logic (Frontend Search)
-    const filteredHistory = history.filter(item => 
-        item.activityName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.location && item.location.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-
-    if (loading) return (
-        <div className="flex h-screen items-center justify-center">
-            <CircularProgress />
-        </div>
-    );
+    const filteredHistory = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return history;
+        return history.filter((item) =>
+            String(item?.activityName ?? '').toLowerCase().includes(q) ||
+            String(item?.location ?? '').toLowerCase().includes(q)
+        );
+    }, [history, searchQuery]);
 
     return (
         <div className="min-h-screen w-full bg-gray-50 pb-10 font-sans">
-            
+
             {/* Header */}
             <div className="w-full bg-[#d32f2f] py-8 text-center text-white shadow-md">
                 <h1 className="text-3xl font-bold tracking-tight">My Activity History</h1>
@@ -86,7 +138,7 @@ export default function HistoryPage() {
                 <div className="mb-8 flex justify-center">
                     <div className="flex w-full max-w-lg items-center rounded-full bg-white px-5 py-3 shadow-sm border border-gray-200 transition-all focus-within:ring-2 focus-within:ring-red-200">
                         <SearchIcon className="text-gray-400 mr-3" />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search your history..."
                             value={searchQuery}
@@ -98,24 +150,33 @@ export default function HistoryPage() {
 
                 {/* History List */}
                 <div className="flex flex-col gap-5">
-                    {filteredHistory.length === 0 ? (
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl bg-white border border-dashed border-gray-300 p-12 text-gray-500">
+                            <CalendarTodayIcon style={{ fontSize: 40, marginBottom: 10, opacity: 0.5 }} />
+                            <p>Loading your paid bookings…</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl bg-white border border-dashed border-gray-300 p-12 text-red-600">
+                            <p className="font-semibold">{error}</p>
+                        </div>
+                    ) : filteredHistory.length === 0 ? (
                         <div className="flex flex-col items-center justify-center rounded-xl bg-white border border-dashed border-gray-300 p-12 text-gray-400">
                             <CalendarTodayIcon style={{ fontSize: 40, marginBottom: 10, opacity: 0.5 }} />
-                            <p>No activity history found.</p>
+                            <p>No paid activity history found.</p>
                         </div>
                     ) : (
                         filteredHistory.map((item) => (
-                            <div 
-                                key={item.bookingID} 
+                            <div
+                                key={item.bookingID}
                                 className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm sm:flex-row border border-gray-100 hover:shadow-md transition-all duration-300"
                             >
                                 {/* IMAGE */}
                                 <div className="relative h-48 w-full bg-gray-200 sm:h-auto sm:w-56 shrink-0 overflow-hidden">
-                                    <img 
-                                        src={item.activityPicUrl} 
+                                    <img
+                                        src={resolveImageUrl(item.activityPicUrl)}
                                         alt={item.activityName}
                                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        onError={(e) => {e.target.src = 'https://via.placeholder.com/300?text=No+Image'}}
+                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=No+Image' }}
                                     />
                                 </div>
 
@@ -125,15 +186,14 @@ export default function HistoryPage() {
                                         <h3 className="text-lg font-bold text-gray-800 leading-tight">
                                             {item.activityName}
                                         </h3>
-                                        <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-full border ${
-                                            item.status === 'PAID' || item.status === 'CONFIRMED' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                        <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-full border ${item.status === 'PAID' || item.status === 'CONFIRMED' ? 'bg-green-50 text-green-700 border-green-200' :
                                             item.status === 'PENDING' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                            'bg-gray-100 text-gray-600 border-gray-200'
-                                        }`}>
+                                                'bg-gray-100 text-gray-600 border-gray-200'
+                                            }`}>
                                             {item.status}
                                         </span>
                                     </div>
-                                    
+
                                     <p className="mb-4 text-sm text-gray-500 line-clamp-2">
                                         {item.description || item.summary || "No description available."}
                                     </p>
@@ -141,14 +201,14 @@ export default function HistoryPage() {
                                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                                         <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
                                             <CalendarTodayIcon style={{ fontSize: 14 }} className="text-teal-600" />
-                                            <span className="font-medium">{item.formattedDate}</span>
+                                            <span className="font-medium">{String(item.sessionDate ?? '').slice(0, 10)}</span>
                                         </div>
                                         <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
                                             <PeopleIcon style={{ fontSize: 14 }} className="text-teal-600" />
                                             <span className="font-medium">{item.noOfPax} Pax</span>
                                         </div>
                                         <div className="flex items-center px-2 py-1 text-teal-700 font-bold">
-                                            Total: ${(Number(item.price) * item.noOfPax).toFixed(2)}
+                                            Total: ${(Number(Number(item.price) || 0) * Number(item.noOfPax || 0)).toFixed(2)}
                                         </div>
                                     </div>
                                 </div>
@@ -159,7 +219,7 @@ export default function HistoryPage() {
                                         <VisibilityIcon style={{ fontSize: 16 }} />
                                         View
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleRemove(item.bookingID)}
                                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm"
                                     >

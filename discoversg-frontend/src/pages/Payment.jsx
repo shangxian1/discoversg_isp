@@ -10,7 +10,7 @@ export default function Payment() {
     const [error, setError] = useState('');
 
     const activityName = String(state?.activityName ?? '').trim();
-    const activityId = state?.activityId;
+    const activityId = Number(state?.activityId);
     const price = Number(state?.price ?? 0);
 
     const isFree = useMemo(() => !Number.isFinite(price) || price <= 0, [price]);
@@ -18,8 +18,27 @@ export default function Payment() {
     const handlePay = async () => {
         setError('');
 
+        const user = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('user') || 'null');
+            } catch {
+                return null;
+            }
+        })();
+
+        const userId = Number(user?.id);
+        if (!Number.isInteger(userId) || userId <= 0) {
+            setError('Please log in to book and pay for activities.');
+            return;
+        }
+
         if (!activityName) {
             setError('Missing activity details. Please go back and try again.');
+            return;
+        }
+
+        if (!Number.isInteger(activityId) || activityId <= 0) {
+            setError('Missing activity ID. Please go back and try again.');
             return;
         }
 
@@ -30,13 +49,33 @@ export default function Payment() {
 
         setLoading(true);
         try {
+            // 1) Create a pending booking first so we can link it to Stripe.
+            const bookingRes = await fetch('http://localhost:3000/api/bookings/create-for-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    activityId,
+                    noOfPax: 1,
+                }),
+            });
+
+            const bookingData = await bookingRes.json();
+            if (!bookingRes.ok) {
+                throw new Error(bookingData?.error || 'Failed to create booking');
+            }
+
+            const bookingId = bookingData?.bookingId;
+            if (!bookingId) {
+                throw new Error('Booking ID missing');
+            }
+
+            // 2) Create Stripe checkout session for that booking.
             const res = await fetch('http://localhost:3000/api/payments/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    activityId,
-                    activityName,
-                    price,
+                    bookingId,
                 }),
             });
 

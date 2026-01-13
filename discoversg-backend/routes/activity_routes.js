@@ -4,6 +4,7 @@ const cors = require("cors");
 const db = require("../database");
 
 router.use(cors());
+router.use(express.json());
 
 router.get("/activities", async (req, res) => {
   try {
@@ -42,7 +43,7 @@ router.get("/activities", async (req, res) => {
         description: row.description ?? "",
         address: row.address ?? "",
         price: row.price,
-        image: imageFilename, 
+        image: imageFilename,
       };
     });
 
@@ -60,6 +61,53 @@ router.get('/locations', async (req, res) => {
     res.json(locations);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching locations' });
+  }
+});
+
+router.get('/activity/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid activity id' });
+    }
+
+    const [rows] = await db.execute(
+      `SELECT 
+        a.activityID,
+        a.activityName,
+        c.categoryName,
+        a.location,
+        a.address,
+        a.summary,
+        a.description,
+        a.price,
+        a.activityPicUrl
+      FROM activity a
+      LEFT JOIN category c ON a.categoryID = c.categoryID
+      WHERE a.activityID = ?
+      LIMIT 1`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Activity not found' });
+    }
+
+    const row = rows[0];
+    return res.status(200).json({
+      activityID: row.activityID,
+      activityName: row.activityName,
+      categoryName: row.categoryName,
+      location: row.location,
+      address: row.address,
+      summary: row.summary,
+      description: row.description,
+      price: row.price,
+      activityPicUrl: row.activityPicUrl,
+    });
+  } catch (error) {
+    console.error('GET /activity/:id error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

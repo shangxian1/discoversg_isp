@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardMedia, 
-  Typography, 
-  Box, 
-  Button, 
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Box,
+  Button,
   Chip,
   CardActions,
   Divider
@@ -19,13 +19,24 @@ export default function ActivityCard({ activity, featured, compact }) {
   const category = activity?.category ?? '';
   const location = activity?.location ?? '';
   const address = activity?.address ?? '';
-  
+
   // Ensure these match the keys in your activity_routes.js 'formatted' object
-  const summary = activity?.summary ?? ''; 
-  const description = activity?.description ?? ''; 
-  
+  const summary = activity?.summary ?? '';
+  const description = activity?.description ?? '';
+
   const price = activity?.price ?? '';
   const image = activity?.image ?? '';
+
+  const resolveImageUrl = (raw) => {
+    const value = String(raw ?? '').trim();
+    if (!value || value === '_') return 'https://placehold.co/600x400?text=No+Image';
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    if (value.startsWith('/assets/')) return value;
+    if (value.startsWith('/')) return value;
+    return `/assets/${value}`;
+  };
+
+  const imageUrl = resolveImageUrl(image);
 
   const navigationState = {
     activityName: title,
@@ -35,42 +46,42 @@ export default function ActivityCard({ activity, featured, compact }) {
     summary: summary,
     description: description,
     price: price,
-    finalImage: image
+    finalImage: imageUrl
   };
 
   // 2. Compact Layout (Grid View)
   if (compact) {
     return (
-      <Card 
-        sx={{ 
-          height: '100%', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          borderRadius: 4, 
+      <Card
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 4,
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
         }}
       >
-        <CardMedia component="img" height="160" image={image} alt={title} sx={{ objectFit: 'cover' }} />
-        
+        <CardMedia component="img" height="160" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
+
         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
           <Typography variant="caption" color="primary" fontWeight="bold" sx={{ textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
             {location}
           </Typography>
-          
+
           <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 1, lineHeight: 1.3 }}>
             {title}
           </Typography>
-          
+
           {/* FIXED: Explicitly rendering the 'summary' variable here */}
-          <Typography variant="body2" color="text.secondary" sx={{ 
-            display: '-webkit-box', 
-            WebkitLineClamp: 2, 
-            WebkitBoxOrient: 'vertical', 
+          <Typography variant="body2" color="text.secondary" sx={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             fontSize: '0.85rem',
             mb: 1
           }}>
-            {summary} 
+            {summary}
           </Typography>
         </CardContent>
 
@@ -98,24 +109,24 @@ export default function ActivityCard({ activity, featured, compact }) {
   // 3. Featured Layout (Large Top Card)
   return (
     <Card sx={{ borderRadius: 4, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-      <CardMedia component="img" height="320" image={image} alt={title} sx={{ objectFit: 'cover' }} />
+      <CardMedia component="img" height="320" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
       <CardContent sx={{ p: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>{title}</Typography>
-            
+
             {/* FIXED: Added Summary as a sub-header in the Featured view */}
             <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 500 }}>
               {summary}
             </Typography>
-            
+
             <Typography variant="subtitle1" color="text.secondary">
               {location} • {address}
             </Typography>
           </Box>
           <Chip label={category} sx={{ bgcolor: '#ccfbf1', color: '#115e59', fontWeight: 'bold' }} />
         </Box>
-        
+
         {/* Description is kept here for the Featured card only */}
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4, lineHeight: 1.8, maxWidth: '80%' }}>
           {description}
