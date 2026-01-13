@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -8,27 +8,20 @@ import {
   Grid,
   Paper,
   IconButton,
-  InputLabel,
-  MenuItem,
-  FormControl,
-  Select,
   Stack,
   CircularProgress,
   Snackbar,
-  Alert
+  Alert,
+  Autocomplete,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
-import {
-  LocalizationProvider,
-  DatePicker,
-} from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 
 // Icons
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import SaveIcon from '@mui/icons-material/Save';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 // Google Maps Components
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
@@ -37,7 +30,7 @@ import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps
 const BACKGROUND_STRIPE_COLOR = 'rgba(255, 255, 255, 0.7)';
 const LIGHT_RED = '#fce4e4';
 const PRIMARY_RED = '#d32f2f';
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBU06pEAaWjEm9e6uJtP1ks0EID4aMAxF4'; // Use your API key
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBU06pEAaWjEm9e6uJtP1ks0EID4aMAxF4'; 
 
 const backgroundStyles = {
   backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 10px, ${BACKGROUND_STRIPE_COLOR} 10px, ${BACKGROUND_STRIPE_COLOR} 20px)`,
@@ -48,7 +41,7 @@ const backgroundStyles = {
 };
 
 // --- Sub-component: Itinerary Display ---
-const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSave, isSaving }) => (
+const ItineraryDisplay = ({ response, mapMarkers, mapCenter, onSave, isSaving }) => (
   <Box sx={{ width: '100%' }}>
     {/* Header with Save Option */}
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -69,23 +62,18 @@ const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSa
       </Button>
     </Box>
 
-    <Box sx={{ display: 'flex', gap: 3, width: '100%', height: '600px', flexDirection: { xs: 'column', md: 'row' } }}>
-      {/* Map Section */}
-      <Box sx={{ flex: 1.2, borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
+    <Box sx={{ display: 'flex', gap: 3, width: '100%', minHeight: '600px', flexDirection: { xs: 'column', md: 'row' } }}>
+      {/* Map Section - Renders markers from ALL days */}
+      <Box sx={{ flex: 1.2, borderRadius: 2, overflow: 'hidden', boxShadow: 3, height: '600px' }}>
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
           <Map
+            key={response.itinerary_name} 
             defaultZoom={13}
-            defaultCenter={defaultCenter}
-            center={mapCenter}
+            defaultCenter={mapCenter} 
             mapId="DEMO_MAP_ID"
             style={{ width: '100%', height: '100%' }}
-            options={{
-              draggable: true,
-              scrollwheel: true,
-              zoomControl: true,
-              mapTypeControl: false,
-              fullscreenControl: true,
-            }}
+            gestureHandling={'greedy'}
+            options={{ disableDefaultUI: false, clickableIcons: false }}
           >
             {mapMarkers.map((marker, index) => (
               <AdvancedMarker
@@ -100,10 +88,10 @@ const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSa
         </APIProvider>
       </Box>
 
-      {/* Itinerary Scrollable Text */}
+      {/* Itinerary List - Loops through all days provided by AI */}
       <Box sx={{ flex: 1, overflowY: 'auto', maxHeight: '600px', pr: 1 }}>
-        {response.days.map((day) => (
-          <Box key={day.day} sx={{ mb: 4 }}>
+        {response.days.map((dayData) => (
+          <Box key={dayData.day} sx={{ mb: 4 }}>
             <Typography
               variant='h6'
               sx={{
@@ -116,10 +104,10 @@ const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSa
                 borderLeft: `6px solid ${PRIMARY_RED}`,
               }}
             >
-              Day {day.day}
+              Day {dayData.day}
             </Typography>
 
-            {day.itinerary.map((item, index) => (
+            {dayData.itinerary.map((item, index) => (
               <Box key={index} sx={{ mb: 3, pl: 2, borderLeft: '2px solid #ddd', '&:hover': { borderLeftColor: PRIMARY_RED } }}>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {item.time}: {item.place_name}
@@ -127,9 +115,9 @@ const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSa
                 <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1 }}>
                   {item.description}
                 </Typography>
-                {item.dining_option && (
-                  <Typography variant="body2" sx={{ color: PRIMARY_RED, fontWeight: 500 }}>
-                    🍽 Dining: {item.dining_option.location}
+                {item.dining_option && item.dining_option.location && (
+                  <Typography variant="body2" sx={{ color: PRIMARY_RED, fontWeight: 'bold', mt: 1 }}>
+                    🍽️ Dining: {item.dining_option.location}
                   </Typography>
                 )}
               </Box>
@@ -143,15 +131,35 @@ const ItineraryDisplay = ({ response, mapMarkers, mapCenter, defaultCenter, onSa
 
 // --- Main Component ---
 export default function ItineraryPlanner() {
-  const [place, setPlace] = useState('woodlands');
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [place, setPlace] = useState(null);
+  const [days, setDays] = useState(1);
+  const [includeDining, setIncludeDining] = useState(false);
+  const [locationOptions, setLocationOptions] = useState([]);
+  const [fetchingLocations, setFetchingLocations] = useState(true);
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Map Data Extraction
+  // Fetch unique locations from database
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/locations');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setLocationOptions(data);
+      } catch (err) {
+        console.error("Failed to fetch locations:", err);
+      } finally {
+        setFetchingLocations(false);
+      }
+    };
+    fetchLocations();
+  }, []);
+
+  // Map markers from ALL days
   const mapMarkers = useMemo(() => {
     if (!response?.days) return [];
     return response.days.flatMap(day =>
@@ -170,13 +178,16 @@ export default function ItineraryPlanner() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!place) return;
+
     setLoading(true);
     setResponse(null);
     setError(null);
 
     const formData = {
       place: place,
-      travelDate: selectedDate ? selectedDate.format('YYYY-MM-DD') : 'Flexible'
+      noOfDays: days,
+      includeDining: includeDining
     };
 
     try {
@@ -199,25 +210,30 @@ export default function ItineraryPlanner() {
     }
   };
 
-  // --- SAVE FUNCTIONALITY ---
+  const handleReset = () => {
+    setResponse(null);
+    setPlace(null);
+    setDays(1);
+    setIncludeDining(false);
+    setError(null);
+  };
+
   const handleSaveItinerary = async () => {
     if (!response) return;
     setSaving(true);
 
-    // Format the AI response to match the SQL/ItineraryPage schema
     const savePayload = {
       title: response.itinerary_name || `Trip to ${place}`,
-      budgetLevel: "Moderate", // AI can be prompted to provide this, or set default
+      budgetLevel: "Moderate", 
       noOfDays: response.days.length,
-      // Mapping nested "days" to a flat list of items for the backend
       items: response.days.flatMap(day => 
         day.itinerary.map(item => ({
           dayNumber: day.day,
           activityName: item.place_name,
           location: item.place_name,
-          startTime: item.time, // Matches format expected by ItineraryPage
+          startTime: item.time,
           notes: item.description,
-          activityPicUrl: "_" // Default placeholder
+          activityPicUrl: "_" 
         }))
       )
     };
@@ -244,62 +260,80 @@ export default function ItineraryPlanner() {
   return (
     <Box sx={backgroundStyles}>
       <Container maxWidth="lg">
-        {/* Top Bar */}
-        <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item xs={12} md={8}>
-            <Paper elevation={0} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: '100%', maxWidth: 450, backgroundColor: LIGHT_RED, borderRadius: '25px' }}>
-              <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
-              <TextField placeholder="Search Singapore..." variant="standard" fullWidth InputProps={{ disableUnderline: true }} sx={{ ml: 1, flex: 1 }} />
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-            <Button variant="contained" sx={{ backgroundColor: LIGHT_RED, color: PRIMARY_RED, borderRadius: '25px', px: 3, boxShadow: 'none' }} startIcon={<FavoriteIcon />}>
-              My Itineraries
-            </Button>
-          </Grid>
-        </Grid>
+        
 
-        <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
-          {response ? 'Your Custom Itinerary' : 'Plan your trip'}
+        <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold', textAlign: response ? 'center' : 'left' }}>
+          {response ? 'Your Custom Itinerary' : 'Plan your trip in Singapore'}
         </Typography>
 
-        <Grid container spacing={4}>
-          {/* Form Section */}
+        <Grid container spacing={4} justifyContent="center">
+          {/* Form Section - Widened horizontally */}
           {!response && !loading && (
-            <Grid item xs={12} md={5}>
-              <Paper sx={{ p: 4, borderRadius: 2 }}>
-                <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-                  <Typography variant='h6' sx={{ color: PRIMARY_RED, fontWeight: 'bold' }}>Where to go?</Typography>
-                  <FormControl fullWidth variant='filled'>
-                    <InputLabel>Select Area</InputLabel>
-                    <Select value={place} onChange={(e) => setPlace(e.target.value)} disableUnderline sx={{ bgcolor: LIGHT_RED, borderRadius: 1 }}>
-                      <MenuItem value={'woodlands'}>Woodlands</MenuItem>
-                      <MenuItem value={'changi'}>Changi Airport</MenuItem>
-                      <MenuItem value={'sentosa'}>Sentosa</MenuItem>
-                      <MenuItem value={'marina bay'}>Marina Bay</MenuItem>
-                      <MenuItem value={'chinatown'}>Chinatown</MenuItem>
-                    </Select>
-                  </FormControl>
+            <Grid item xs={12} md={10} lg={9}> 
+              <Paper sx={{ p: { xs: 4, md: 6 }, borderRadius: 2 }}>
+                <Stack spacing={4} component="form" onSubmit={handleSubmit}>
+                  <Typography variant='h5' sx={{ color: PRIMARY_RED, fontWeight: 'bold' }}>Where to go?</Typography>
+                  <Autocomplete
+                    fullWidth
+                    options={locationOptions}
+                    loading={fetchingLocations}
+                    value={place}
+                    onChange={(event, newValue) => setPlace(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Area"
+                        variant="filled"
+                        required
+                        sx={{ bgcolor: LIGHT_RED, borderRadius: 1 }}
+                        InputProps={{
+                          ...params.InputProps,
+                          disableUnderline: true,
+                          endAdornment: (
+                            <React.Fragment>
+                              {fetchingLocations ? <CircularProgress color="inherit" size={20} /> : null}
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
 
-                  <Typography variant='h6' sx={{ color: PRIMARY_RED, fontWeight: 'bold' }}>Travel Date</Typography>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={selectedDate}
-                      onChange={setSelectedDate}
-                      slotProps={{ textField: { fullWidth: true, variant: 'filled', sx: { bgcolor: LIGHT_RED } } }}
-                    />
-                  </LocalizationProvider>
+                  <Typography variant='h5' sx={{ color: PRIMARY_RED, fontWeight: 'bold' }}>Duration</Typography>
+                  <TextField 
+                    fullWidth
+                    type="number"
+                    label="Number of Days"
+                    variant="filled"
+                    value={days}
+                    onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))}
+                    sx={{ bgcolor: LIGHT_RED, borderRadius: 1 }}
+                    inputProps={{ min: 1, max: 14 }}
+                  />
 
-                  <Button type='submit' variant='contained' size="large" sx={{ py: 2, bgcolor: PRIMARY_RED, fontSize: '1.1rem' }}>
-                    Generate
+                  <Typography variant='h5' sx={{ color: PRIMARY_RED, fontWeight: 'bold' }}>Preferences</Typography>
+                  <FormControlLabel
+                    control={
+                      <Checkbox 
+                        checked={includeDining} 
+                        onChange={(e) => setIncludeDining(e.target.checked)} 
+                        sx={{ color: PRIMARY_RED, '&.Mui-checked': { color: PRIMARY_RED } }}
+                      />
+                    }
+                    label="Include Dining Options"
+                  />
+
+                  <Button type='submit' variant='contained' size="large" fullWidth sx={{ py: 2, bgcolor: PRIMARY_RED, fontSize: '1.2rem' }} disabled={!place}>
+                    Generate Itinerary
                   </Button>
                 </Stack>
               </Paper>
             </Grid>
           )}
 
-          {/* Results / Loading Section */}
-          <Grid item xs={12} md={response ? 12 : 7}>
+          {/* Results Section - Centered results */}
+          <Grid item xs={12}>
             {loading && (
               <Stack spacing={3} sx={{ alignItems: 'center', mt: 10 }}>
                 <CircularProgress size={60} sx={{ color: PRIMARY_RED }} />
@@ -307,25 +341,52 @@ export default function ItineraryPlanner() {
               </Stack>
             )}
 
-            {error && <Alert severity="error">{error}</Alert>}
-
-            {response && (
-              <ItineraryDisplay
-                response={response}
-                mapMarkers={mapMarkers}
-                mapCenter={mapCenter}
-                defaultCenter={defaultCenter}
-                onSave={handleSaveItinerary}
-                isSaving={saving}
-              />
+            {error && (
+               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Alert severity="error" sx={{ maxWidth: '600px', width: '100%' }}>{error}</Alert>
+               </Box>
             )}
 
-            
+            {response && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Box sx={{ width: '100%', maxWidth: '1100px' }}>
+                  
+                  {/* Generate Again Button */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<RefreshIcon />}
+                      onClick={handleReset}
+                      sx={{ 
+                        color: PRIMARY_RED, 
+                        borderColor: PRIMARY_RED,
+                        borderRadius: '25px',
+                        px: 4,
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          borderColor: '#b71c1c',
+                          backgroundColor: LIGHT_RED
+                        }
+                      }}
+                    >
+                      Plan Another Trip
+                    </Button>
+                  </Box>
+
+                  <ItineraryDisplay
+                    response={response}
+                    mapMarkers={mapMarkers}
+                    mapCenter={mapCenter}
+                    onSave={handleSaveItinerary}
+                    isSaving={saving}
+                  />
+                </Box>
+              </Box>
+            )}
           </Grid>
         </Grid>
       </Container>
 
-      {/* Notifications */}
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled">
           {snackbar.message}

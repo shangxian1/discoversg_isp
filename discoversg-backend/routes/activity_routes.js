@@ -56,4 +56,14 @@ router.get('/activities', async (req, res) => {
     }
 });
 
+router.get('/locations', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT DISTINCT location FROM activity WHERE location IS NOT NULL');
+    const locations = rows.map(row => row.location);
+    res.json(locations);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching locations' });
+  }
+});
+
 module.exports = router;
