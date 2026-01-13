@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -25,6 +25,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 
 // Google Maps Components
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import SnackBarDialog from '../components/layout/SnackBar';
 
 // --- Constants & Styles ---
 const BACKGROUND_STRIPE_COLOR = 'rgba(255, 255, 255, 0.7)';
@@ -140,7 +141,7 @@ export default function ItineraryPlanner() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const snackRef = useRef();
 
   // Fetch unique locations from database
   useEffect(() => {
@@ -237,7 +238,7 @@ export default function ItineraryPlanner() {
         }))
       )
     };
-
+    
     try {
       const res = await fetch('http://localhost:3000/api/itinerary', {
         method: 'POST',
@@ -246,12 +247,12 @@ export default function ItineraryPlanner() {
       });
 
       if (res.ok) {
-        setSnackbar({ open: true, message: 'Itinerary saved successfully!', severity: 'success' });
+        snackRef.current.handleState('Itinerary saved successfully!');
       } else {
         throw new Error('Failed to save');
       }
     } catch (err) {
-      setSnackbar({ open: true, message: 'Failed to save itinerary.', severity: 'error' });
+      snackRef.current.handleState('Failed to save itinerary.');
     } finally {
       setSaving(false);
     }
@@ -387,11 +388,7 @@ export default function ItineraryPlanner() {
         </Grid>
       </Container>
 
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      <SnackBarDialog ref={snackRef}></SnackBarDialog>
     </Box>
   );
 }

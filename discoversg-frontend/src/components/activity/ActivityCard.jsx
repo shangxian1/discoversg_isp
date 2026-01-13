@@ -12,14 +12,14 @@ import {
   Divider
 } from '@mui/material';
 
-export default function ActivityCard({ activity, featured, compact }) {
+export default function ActivityCard({ activity, featured }) {
   // 1. Map variables directly from the activity object sent by your backend
   const id = activity?.id;
   const title = activity?.title ?? '';
   const category = activity?.category ?? '';
   const location = activity?.location ?? '';
   const address = activity?.address ?? '';
-
+  
   // Ensure these match the keys in your activity_routes.js 'formatted' object
   const summary = activity?.summary ?? '';
   const description = activity?.description ?? '';
@@ -85,69 +85,23 @@ export default function ActivityCard({ activity, featured, compact }) {
           </Typography>
         </CardContent>
 
-        <Divider variant="middle" sx={{ opacity: 0.6 }} />
+      <Divider variant="middle" sx={{ opacity: 0.6 }} />
 
-        <CardActions sx={{ px: 2, py: 1.5, justifyContent: 'space-between' }}>
-          <Typography variant="subtitle1" fontWeight="bold" color="teal">
-            {parseFloat(price) > 0 ? `$${price}` : 'Free'}
-          </Typography>
-          <Button
-            component={Link}
-            to={`/activity/${id}`}
-            state={navigationState}
-            variant="contained"
-            disableElevation
-            sx={{ bgcolor: '#0d9488', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-          >
-            View
-          </Button>
-        </CardActions>
-      </Card>
-    );
-  }
-
-  // 3. Featured Layout (Large Top Card)
-  return (
-    <Card sx={{ borderRadius: 4, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-      <CardMedia component="img" height="320" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
-      <CardContent sx={{ p: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>{title}</Typography>
-
-            {/* FIXED: Added Summary as a sub-header in the Featured view */}
-            <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 500 }}>
-              {summary}
-            </Typography>
-
-            <Typography variant="subtitle1" color="text.secondary">
-              {location} • {address}
-            </Typography>
-          </Box>
-          <Chip label={category} sx={{ bgcolor: '#ccfbf1', color: '#115e59', fontWeight: 'bold' }} />
-        </Box>
-
-        {/* Description is kept here for the Featured card only */}
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4, lineHeight: 1.8, maxWidth: '80%' }}>
-          {description}
+      <CardActions sx={{ px: 2, py: 1.5, justifyContent: 'space-between' }}>
+        <Typography variant="subtitle1" fontWeight="bold" color="teal">
+          {parseFloat(price) > 0 ? `$${price}` : 'Free'}
         </Typography>
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" fontWeight="900" color="#0d9488">
-            {parseFloat(price) > 0 ? `$${price}` : 'Free'}
-          </Typography>
-          <Button
-            component={Link}
-            to={`/activity/${id}`}
-            state={navigationState}
-            variant="contained"
-            size="large"
-            sx={{ bgcolor: '#0d9488', borderRadius: 3, px: 6, py: 1.5, fontWeight: 'bold' }}
-          >
-            Explore Details
-          </Button>
-        </Box>
-      </CardContent>
+        <Button
+          component={Link}
+          to={`/activity/${id}`}
+          state={navigationState}
+          variant="contained"
+          disableElevation
+          sx={{ bgcolor: '#0d9488', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+        >
+          {featured ? 'Explore Details' : 'View' }
+        </Button>
+      </CardActions>
     </Card>
   );
 }
