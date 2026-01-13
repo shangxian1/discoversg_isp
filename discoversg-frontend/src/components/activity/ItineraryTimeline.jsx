@@ -6,41 +6,103 @@ import { Button } from "@mui/material";
 const ItineraryTimeline = ({ itinerary }) => {
   return (
     <VerticalTimeline className="p-5! color m-0! w-full! relative">
+      {/* Hardcoded - will do mapping in future commit */}
       <VerticalTimelineElement
-        className="vertical-timeline-element--work"
-        contentArrowStyle={{ left: 'calc(100% - 10px)' }}
-        iconStyle={{ background: 'rgb(33, 150, 243)', color: '#fff' }}
+        iconStyle={{
+          background: '#3b82f6',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+        }}
+        style={{
+          margin: '10px 0'
+        }}
+        icon={<span>11AM</span>}
       >
-        <h3 className="vertical-timeline-element-title">Testing</h3>
+        <h3>Testing</h3>
         <p>Testing123</p>
       </VerticalTimelineElement>
       <VerticalTimelineElement
-        className="vertical-timeline-element--work"
-        contentArrowStyle={{ left: 'calc(100% - 10px)' }}
-        iconStyle={{ background: 'rgb(33, 150, 243)', color: '#fff' }}
+        iconStyle={{
+          background: '#3b82f6',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+        }}
+        style={{
+          margin: '10px 0'
+        }}
+        icon={<span>11AM</span>}
       >
-        <h3 className="vertical-timeline-element-title">Testing</h3>
+        <h3>Testing</h3>
         <p>Testing123</p>
       </VerticalTimelineElement>
       <VerticalTimelineElement
-        className="vertical-timeline-element--work"
-        contentArrowStyle={{ left: 'calc(100% - 10px)' }}
-        iconStyle={{ background: 'rgb(33, 150, 243)', color: '#fff' }}
+        iconStyle={{
+          background: '#3b82f6',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+        }}
+        style={{
+          margin: '10px 0'
+        }}
+        icon={<span>11AM</span>}
       >
-        <h3 className="vertical-timeline-element-title">Testing</h3>
+        <h3>Testing</h3>
         <p>Testing123</p>
       </VerticalTimelineElement>
-      <VerticalTimelineElement>
-        <h2>Testing</h2>
+            <VerticalTimelineElement
+        iconStyle={{
+          background: '#3b82f6',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+        }}
+        style={{
+          margin: '10px 0'
+        }}
+        icon={<span>11AM</span>}
+      >
+        <h3>Testing</h3>
         <p>Testing123</p>
       </VerticalTimelineElement>
-      
-      <Button variant="contained" 
-      onClick={() => {}} 
-      sx={{ backgroundColor: '#6750A4', position: 'absolute', top: '67%', left: '43%' }}
+            <VerticalTimelineElement
+        iconStyle={{
+          background: '#3b82f6',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+        }}
+        style={{
+          margin: '10px 0'
+        }}
+        icon={<span>11AM</span>}
       >
-        Test
-      </Button>
+        <h3>Testing</h3>
+        <p>Testing123</p>
+      </VerticalTimelineElement>
+        <Button
+          variant="contained"
+          sx={{ bgcolor: '#0d9488', borderRadius: 2, textTransform: 'none', fontWeight: 'bold', position: 'absolute', top: '75%', left: '35%' }}
+        >
+          View Current Itinerary
+        </Button>
     </VerticalTimeline>
   )
 }

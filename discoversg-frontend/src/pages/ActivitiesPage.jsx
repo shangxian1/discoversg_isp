@@ -4,12 +4,14 @@ import ItineraryCard from '../components/activity/ItineraryCard';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ItineraryTimeline from '../components/activity/ItineraryTimeline';
+import { Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 export default function Activities() {
     // 1. Data State
     const [activities, setActivities] = useState([]);
     const [itinerary, setItinerary] = useState([]);
-    
+
     // 2. Filter States (Added these)
     const [searchQuery, setSearchQuery] = useState('');
     const [budgetFilter, setBudgetFilter] = useState('All');
@@ -26,7 +28,7 @@ export default function Activities() {
             .then(res => res.json())
             .then(data => {
                 setActivities(data);
-                
+
                 // --- NEW: Automatically find all Categories & Locations from DB ---
                 const cats = [...new Set(data.map(item => item.category))].filter(Boolean).sort();
                 const locs = [...new Set(data.map(item => item.location))].filter(Boolean).sort();
@@ -100,23 +102,35 @@ export default function Activities() {
                     <div className="lg:col-span-3 h-fit">
                         <h2 className="text-lg font-semibold mb-3">Featured Section</h2>
                         {featuredActivity ? (
-                            <ActivityCard key={featuredActivity.id} activity={featuredActivity} featured/>
+                            <ActivityCard key={featuredActivity.id} activity={featuredActivity} featured />
                         ) : (
                             <div className="p-10 text-center text-gray-500 bg-gray-50 rounded-xl">
                                 No activities found.
                             </div>
                         )}
                     </div>
-                    <div className='lg:col-span-3' style={{ height: '600px', overflowY: 'hidden'}}>
+                    <div className='lg:col-span-3' style={{ maxHeight: '600px', overflowY: 'hidden' }}>
                         <h2 className="text-lg font-semibold mb-3">Itinerary</h2>
-                        <ItineraryTimeline itinerary={itinerary} />
+                        {itinerary ? (<ItineraryTimeline itinerary={itinerary} />) :
+                            <div className='flex justify-center items-center flex-col w-full!'>
+                                <p className='pb-3 font-bold text-xl'>No current itinerary</p>
+                                <Button
+                                    variant="contained"
+                                    component={Link}
+                                    to={`/planner`}
+                                    sx={{ bgcolor: '#0d9488', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                                >
+                                    Generate an itinerary
+                                </Button>
+                            </div>
+                        }
                     </div>
                 </div>
 
                 {/* --- FILTERS SECTION (Updated with Logic) --- */}
                 <div className="mb-6 flex flex-wrap items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">Filter by:</span>
-                    
+
                     {/* Budget */}
                     <select
                         value={budgetFilter}
