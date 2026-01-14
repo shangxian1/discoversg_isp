@@ -25,21 +25,28 @@ function GemCard({ item }) {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    console.log("Navigating with item:", item);
+    const targetId = item.id || item.activityID;
+    
     const mappedState = {
-      activityName: item.activityName,
-      categoryName: item.categoryName || item.category || "Activity",
-      location: item.location,
-      address: item.address,
-      summary: item.summary,
-      description: item.description,
-      price: item.price,
-      finalImage: `/assets/${item.image}`
+      ...item,
+      finalImage: item.image && item.image !== '_' 
+        ? (item.image.startsWith('http') ? item.image : `/assets/${item.image}`) 
+        : item.activityPicUrl 
+          ? `/assets/${item.activityPicUrl}`
+          : "https://placehold.co/600x400?text=No+Image"
     };
 
-    
-    navigate(`/activity/${item.activityID}`, { state: mappedState });
+    navigate(`/activity/${targetId}`, { state: mappedState });
   };
+
+  const imageUrl = item.image && item.image !== '_' 
+    ? (item.image.startsWith('http') ? item.image : `/assets/${item.image}`) 
+    : item.activityPicUrl 
+      ? `/assets/${item.activityPicUrl}`
+      : "https://placehold.co/600x400?text=No+Image";
+
+  const title = item.title || item.activityName;
+  const category = item.category || item.categoryName || "Activity";
 
   return (
     <Card
@@ -67,12 +74,8 @@ function GemCard({ item }) {
         <Box sx={{ width: "100%", position: "relative" }}>
           <CardMedia
             component="img"
-            image={
-              item.image
-                ? `/assets/${item.image}` // ✅ served from frontend public/assets
-                : "https://placehold.co/600x400?text=No+Image"
-            }
-            alt={item.title}
+            image={imageUrl}
+            alt={title}
             sx={{
               width: "100% !important",
               height: "200px",
@@ -91,7 +94,7 @@ function GemCard({ item }) {
             sx={{ mb: 1 }}
           >
             <Chip
-              label={item.category || "Activity"}
+              label={category}
               size="small"
               variant="outlined"
               sx={{ fontWeight: "bold" }}
@@ -107,7 +110,7 @@ function GemCard({ item }) {
             variant="h6"
             sx={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.2, mb: 1 }}
           >
-            {item.title}
+            {title}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary" }}>
@@ -128,16 +131,9 @@ function GemCard({ item }) {
   );
 }
 
-export default function ContentSection() {
+export default function ContentSection({ items, title }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const offers = useMemo(
-    () => activities.filter((a) => Number(a.price) === 0 || Number(a.price) <= 15).slice(0, 4),
-    [activities]
-  );
-
-  const featured = useMemo(() => activities.slice(0, 6), [activities]);
 
   useEffect(() => {
     let alive = true;
@@ -163,8 +159,35 @@ export default function ContentSection() {
     };
   }, []);
 
+  const offers = useMemo(
+    () => activities.filter((a) => Number(a.price) === 0 || Number(a.price) <= 15).slice(0, 4),
+    [activities]
+  );
+
+  const featured = useMemo(() => activities.slice(0, 6), [activities]);
+
+  const hasRecommendations = items && items.length > 0;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      
+      {hasRecommendations && (
+        <Box sx={{ mb: 6, borderBottom: '1px solid #eee', pb: 4 }}>
+           <Typography variant="h4" sx={{ mb: 3, fontWeight: 800, color: '#196f75' }}>
+              {title || "Recommended For You"}
+           </Typography>
+           
+           <Grid container spacing={3}>
+            {items.map((item) => (
+              <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+                <GemCard item={item} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* --- SECTION 2: OFFERS (Generic) --- */}
       <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
         Offers
       </Typography>
@@ -176,13 +199,13 @@ export default function ContentSection() {
       ) : (
         <Grid container spacing={3} sx={{ mb: 5 }}>
           {offers.map((item) => (
-            <Grid key={item.activityID} item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
+            <Grid key={item.id || item.activityID} item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
               <GemCard item={item} />
             </Grid>
           ))}
         </Grid>
       )}
-
+      {/* --- SECTION 3: Featuered --- */}
       <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
         Featured
       </Typography>
@@ -194,7 +217,7 @@ export default function ContentSection() {
       ) : (
         <Grid container spacing={3}>
           {featured.map((item) => (
-            <Grid key={item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+            <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
               <GemCard item={item} />
             </Grid>
           ))}
