@@ -23,7 +23,7 @@ const Login = () => {
 
       if (response.ok && data.success) {
         localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = '/';
+        window.location.href = '/home';
       } else {
         setError(data.message || "Invalid username or password");
       }

@@ -25,7 +25,20 @@ function GemCard({ item }) {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    navigate(`/activity/${item.id}`, { state: item });
+    console.log("Navigating with item:", item);
+    const mappedState = {
+      activityName: item.activityName,
+      categoryName: item.categoryName || item.category || "Activity",
+      location: item.location,
+      address: item.address,
+      summary: item.summary,
+      description: item.description,
+      price: item.price,
+      finalImage: `/assets/${item.image}`
+    };
+
+    
+    navigate(`/activity/${item.activityID}`, { state: mappedState });
   };
 
   return (
@@ -163,7 +176,7 @@ export default function ContentSection() {
       ) : (
         <Grid container spacing={3} sx={{ mb: 5 }}>
           {offers.map((item) => (
-            <Grid key={item.id} item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
+            <Grid key={item.activityID} item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
               <GemCard item={item} />
             </Grid>
           ))}
@@ -181,7 +194,7 @@ export default function ContentSection() {
       ) : (
         <Grid container spacing={3}>
           {featured.map((item) => (
-            <Grid key={item.id} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+            <Grid key={item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
               <GemCard item={item} />
             </Grid>
           ))}

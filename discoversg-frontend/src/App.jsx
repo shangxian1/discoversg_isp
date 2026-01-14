@@ -3,7 +3,8 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Outlet
+  Outlet,
+  Navigate
 } from 'react-router-dom';
 
 import { ThemeProvider, CssBaseline, GlobalStyles, Box } from '@mui/material';
@@ -65,12 +66,14 @@ export default function App() {
 
       <Routes>
         <Route element={<MainLayout />}>
-          {/* Always show the Landing/Main Home Page at the root */}
-          <Route path="/" element={<HomeContent />} />
+         
 
           {/* Dedicated route for the User Home Page (Dashboard) */}
+          <Route
+            path="/"
+            element={isLoggedIn ? <Navigate to="/home" replace /> : <HomeContent />}
+          />
           <Route path="/home" element={<UserHome />} />
-
           <Route path="/activities" element={<Activities />} />
           <Route path="/planner" element={<TripPlanner />} />
           <Route path="/login" element={<Login />} />
