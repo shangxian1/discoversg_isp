@@ -1,135 +1,182 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Tabs, Tab, Grid, Container, Paper, CardContent, IconButton, CircularProgress } from '@mui/material';
-import CancelIcon from '@mui/icons-material/Cancel';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Box, Typography, Grid, Container, Paper, CircularProgress, 
+  Divider, Chip, Stack, Button, IconButton, Tabs, Tab, List, ListItemButton, ListItemText
+} from '@mui/material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PaidIcon from '@mui/icons-material/Paid';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import MapIcon from '@mui/icons-material/Map';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SnackBarDialog from '../components/layout/SnackBar';
 
 const ItineraryPage = () => {
-  const [itinerary, setItinerary] = useState(null);
+  const [itineraries, setItineraries] = useState([]);
+  const [activeIdx, setActiveIdx] = useState(0); // Index of the currently selected trip
   const [selectedDay, setSelectedDay] = useState(1);
   const [loading, setLoading] = useState(true);
+  const snackRef = useRef(null);
 
   useEffect(() => {
-    // Replace '1' with the dynamic ID if you implement routing later (e.g., useParams)
-    fetch('http://localhost:3000/api/itinerary/1')
+    const userData = JSON.parse(localStorage.getItem('user'));
+    const userID = userData?.userID || userData?.id || 1; 
+
+    // Fetch all itineraries for this user
+    fetch(`http://localhost:3000/api/user-itineraries/${userID}`)
       .then((res) => res.json())
       .then((data) => {
-        setItinerary(data);
+        const parsedItineraries = data.map(item => ({
+          ...item,
+          // Convert JSON string back to object
+          details: item.itineraryInfo ? JSON.parse(item.itineraryInfo) : []
+        }));
+        setItineraries(parsedItineraries);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching itinerary:", err);
+        console.error("Error fetching itineraries:", err);
         setLoading(false);
       });
   }, []);
 
-  // Show loading spinner while fetching
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress sx={{ color: '#c61a1a' }} />
-      </Box>
-    );
-  }
+  // Reset selected day to 1 when switching between different itineraries
+  useEffect(() => {
+    setSelectedDay(1);
+  }, [activeIdx]);
 
-  if (!itinerary) return <Typography align="center" sx={{ mt: 10 }}>Itinerary not found.</Typography>;
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently remove this itinerary?")) return;
 
-  // Filter the joined items by the day currently selected in the Tabs
-  const dayItems = itinerary.items.filter(item => item.dayNumber === selectedDay);
+    try {
+      const res = await fetch(`http://localhost:3000/api/itinerary/${id}`, {
+        method: 'DELETE',
+      });
 
-  // Helper to format SQL Time (14:00:00) to display time (14:00)
-  const formatTime = (timeString) => {
-    if (!timeString) return "TBD";
-    return timeString.substring(0, 5); 
+      if (res.ok) {
+        setItineraries(prev => prev.filter(itin => itin.itineraryID !== id));
+        setActiveIdx(0); // Reset to first item
+        if (snackRef.current) snackRef.current.handleState('Itinerary removed.');
+      }
+    } catch (err) {
+      if (snackRef.current) snackRef.current.handleState('Error deleting itinerary.');
+    }
   };
 
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 20 }}><CircularProgress color="error" /></Box>;
+  if (itineraries.length === 0) return <Container sx={{ py: 10, textAlign: 'center' }}><Typography variant="h5">No saved itineraries found. Plan one now!</Typography></Container>;
+
+  const currentItin = itineraries[activeIdx];
+  const currentDayData = currentItin?.details.find(d => d.day === selectedDay);
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fff', pb: 10, position: 'relative' }}>
-      {/* Decorative Striped Background */}
-      <Box sx={{ 
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1, opacity: 0.05,
-        backgroundImage: 'linear-gradient(90deg, #c61a1a 40px, transparent 40px)',
-        backgroundSize: '80px 100%' 
-      }} />
+    <Box sx={{ minHeight: '100vh', bgcolor: '#fdfdfd', pb: 10 }}>
+      <Container maxWidth="xl" sx={{ pt: 6 }}>
+        <Grid container spacing={4}>
+          
+          {/* --- LEFT SIDEBAR: LIST OF SAVED TRIPS --- */}
+          <Grid item xs={12} md={3}>
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>My Saved Trips</Typography>
+            <Typography variant="h6" sx={{ mb: 3 }}>You have {itineraries.length} saved trips</Typography>
+            <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <List sx={{ p: 0 }}>
+                {itineraries.map((itin, index) => (
+                  <React.Fragment key={itin.itineraryID}>
+                    <ListItemButton 
+                      selected={activeIdx === index}
+                      onClick={() => setActiveIdx(index)}
+                      sx={{ 
+                        py: 2,
+                        '&.Mui-selected': { borderLeft: '5px solid #d32f2f', bgcolor: '#fff4f4' }
+                      }}
+                    >
+                      <ListItemText 
+                        primary={itin.title} 
+                        secondary={`${itin.noOfDays} Days • ${itin.budgetLevel}`} 
+                        primaryTypographyProps={{ fontWeight: 'bold' }}
+                      />
+                    </ListItemButton>
+                    <Divider />
+                  </React.Fragment>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
 
-      <Container maxWidth="md" sx={{ pt: 8 }}>
-        <Typography variant="h2" align="center" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase' }}>
-          {itinerary.title}
-        </Typography>
-        <Typography variant="h6" align="center" color="textSecondary" sx={{ mb: 4 }}>
-          {itinerary.budgetLevel} Budget • {itinerary.noOfDays} Days in Singapore
-        </Typography>
-
-        {/* Dynamic Day Tabs based on noOfDays from DB */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>
-          <Tabs 
-            value={selectedDay} 
-            onChange={(e, val) => setSelectedDay(val)}
-            variant="scrollable"
-            scrollButtons="auto"
-            TabIndicatorProps={{ style: { display: 'none' } }}
-            sx={{ 
-              '& .MuiTab-root': { bgcolor: '#d9d9d9', borderRadius: '50px', mx: 1, fontWeight: 'bold', minWidth: 100 },
-              '& .Mui-selected': { bgcolor: '#bdbdbd !important', color: '#000 !important' } 
-            }}
-          >
-            {[...Array(itinerary.noOfDays)].map((_, i) => (
-              <Tab key={i + 1} value={i + 1} label={`Day ${i + 1}`} />
-            ))}
-          </Tabs>
-        </Box>
-
-        <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-          Day {selectedDay} Schedule
-        </Typography>
-
-        <Grid container spacing={3}>
-          {dayItems.length > 0 ? dayItems.map((item, index) => (
-            <Grid item xs={12} key={item.itineraryItemID || index}>
-              <Paper elevation={0} sx={{ display: 'flex', alignItems: 'center', bgcolor: '#d9d9d9', borderRadius: '25px', p: 2 }}>
-                
-                {/* Activity Image with Fallback */}
-                <Box sx={{ 
-                  width: 160, height: 120, bgcolor: '#000', borderRadius: '20px', flexShrink: 0,
-                  backgroundImage: item.activityPicUrl && item.activityPicUrl !== '_' 
-                    ? `url(/assets/${item.activityPicUrl})` 
-                    : `url('https://via.placeholder.com/160x120?text=No+Image')`, 
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-
-                <CardContent sx={{ flexGrow: 1, ml: 2 }}>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{item.activityName}</Typography>
-                  <Box sx={{ display: 'flex', gap: 4, mt: 1 }}>
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontWeight: 'bold' }}>Location</Typography>
-                      <Typography variant="body1">{item.location}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontWeight: 'bold' }}>Start Time</Typography>
-                      <Typography variant="body1">{formatTime(item.startTime)}</Typography>
-                    </Box>
-                  </Box>
-                  {item.notes && (
-                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'gray' }}>
-                      Note: {item.notes}
-                    </Typography>
-                  )}
-                </CardContent>
-
-                <Box sx={{ textAlign: 'center', pr: 2 }}>
-                  <IconButton sx={{ color: '#c61a1a' }}>
-                    <CancelIcon sx={{ fontSize: 40 }} />
-                  </IconButton>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Remove</Typography>
+          {/* --- RIGHT CONTENT: SELECTED ITINERARY DETAILS --- */}
+          <Grid item xs={12} md={9}>
+            {/* Header */}
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #eee', mb: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, letterSpacing: -1 }}>
+                    {currentItin.title}
+                  </Typography>
+                  <Stack direction="row" spacing={1.5}>
+                    <Chip icon={<CalendarMonthIcon />} label={`${currentItin.noOfDays} Days`} />
+                    <Chip icon={<PaidIcon />} label={currentItin.budgetLevel} color="success" variant="outlined" />
+                  </Stack>
                 </Box>
-              </Paper>
+                <Button 
+                  color="error" 
+                  startIcon={<DeleteOutlineIcon />}
+                  onClick={() => handleDelete(currentItin.itineraryID)}
+                >
+                  Remove
+                </Button>
+              </Box>
+            </Paper>
+
+            {/* Day Selector */}
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+              <Tabs 
+                value={selectedDay} 
+                onChange={(e, val) => setSelectedDay(val)}
+                variant="scrollable"
+                sx={{ '& .MuiTabs-indicator': { bgcolor: '#d32f2f' } }}
+              >
+                {currentItin.details.map((day) => (
+                  <Tab key={day.day} value={day.day} label={`Day ${day.day}`} sx={{ fontWeight: 'bold' }} />
+                ))}
+              </Tabs>
+            </Box>
+
+            <Grid container spacing={4}>
+              {/* Timeline */}
+              <Grid item xs={12} lg={7}>
+                <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>Planned Schedule</Typography>
+                {currentDayData?.itinerary.map((item, index) => (
+                  <Box key={index} sx={{ display: 'flex', gap: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#d32f2f' }} />
+                      {index !== currentDayData.itinerary.length - 1 && <Box sx={{ width: 2, flexGrow: 1, bgcolor: '#eee', my: 1 }} />}
+                    </Box>
+                    <Paper elevation={0} sx={{ p: 2, mb: 3, flexGrow: 1, border: '1px solid #f0f0f0', borderRadius: 3 }}>
+                      <Typography variant="caption" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>{item.time}</Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{item.place_name}</Typography>
+                      <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                    </Paper>
+                  </Box>
+                ))}
+              </Grid>
+
+              {/* Sidebar actions */}
+              <Grid item xs={12} lg={5}>
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 4 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Location Overview</Typography>
+                  {currentDayData?.itinerary.map((item, i) => (
+                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <LocationOnIcon sx={{ fontSize: 18, color: '#d32f2f' }} />
+                      <Typography variant="body2">{item.place_name}</Typography>
+                    </Box>
+                  ))}
+                </Paper>
+              </Grid>
             </Grid>
-          )) : (
-            <Grid item xs={12}>
-              <Typography align="center" color="textSecondary">No activities planned for this day.</Typography>
-            </Grid>
-          )}
+          </Grid>
         </Grid>
       </Container>
+      <SnackBarDialog ref={snackRef} />
     </Box>
   );
 };

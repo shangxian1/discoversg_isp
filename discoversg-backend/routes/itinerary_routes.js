@@ -67,5 +67,44 @@ router.post('/itinerary', async (req, res) => {
     }
 });
 
+router.get('/user-itineraries/:userID', async (req, res) => {
+    const userID = req.params.userID;
+    try {
+        // We MUST include itineraryInfo in the SELECT statement
+        const [rows] = await global.db.execute(
+            `SELECT itineraryID, title, noOfDays, budgetLevel, createdAt, itineraryInfo 
+             FROM itinerary 
+             WHERE userID = ? 
+             ORDER BY createdAt DESC`,
+            [userID]
+        );
+        res.status(200).json(rows);
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        res.status(500).json({ error: "Failed to fetch itineraries" });
+    }
+});
+
+router.delete('/itinerary/:id', async (req, res) => {
+    const itineraryId = req.params.id;
+
+    try {
+        // Execute the delete query against the itinerary table
+        const [result] = await global.db.execute(
+            'DELETE FROM itinerary WHERE itineraryID = ?',
+            [itineraryId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Itinerary not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Itinerary deleted successfully" });
+    } catch (error) {
+        console.error("Delete Error:", error);
+        res.status(500).json({ success: false, message: "Error deleting itinerary" });
+    }
+});
+
 
 module.exports = router;

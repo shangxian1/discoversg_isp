@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { 
-  Box, Typography, Button, Container, Paper, IconButton 
+import {
+  Box, Typography, Button, Container, Paper, IconButton
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -9,30 +9,36 @@ const ActivityDetails = () => {
   const { state } = useLocation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activity, setActivity] = useState(state);
-  const [loading, setLoading] = useState(!state);
+
+  // Start with null to force the fetch to run
+  const [activity, setActivity] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fallback if state is lost (e.g., page refresh)
-    if (!activity) {
-      fetch(`http://localhost:3000/api/activity/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setActivity({
-            activityName: data.activityName,
-            categoryName: data.categoryName,
-            location: data.location,
-            address: data.address, 
-            summary: data.summary,
-            description: data.description,
-            price: data.price,
-            finalImage: `/assets/${data.activityPicUrl}`
-          });
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    }
-  }, [id, activity]);
+    // We always fetch from the ID to ensure we get the full description
+    fetch(`http://localhost:3000/api/activity/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setActivity({
+          activityName: data.activityName,
+          categoryName: data.categoryName || "Activity",
+          location: data.location,
+          address: data.address,
+          summary: data.summary,
+          description: data.description, // Full text from DB
+          price: data.price,
+          finalImage: `/assets/${data.activityPicUrl}` // From DB column
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching full activity details:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <Typography sx={{ p: 10, textAlign: 'center' }}>Loading...</Typography>;
+  if (!activity) return <Typography sx={{ p: 10, textAlign: 'center' }}>Activity not found.</Typography>;
 
   if (loading) return <Typography sx={{ p: 10, textAlign: 'center' }}>Loading...</Typography>;
   if (!activity) return <Typography sx={{ p: 10, textAlign: 'center' }}>Activity not found.</Typography>;
@@ -89,7 +95,7 @@ const ActivityDetails = () => {
                 })
               }
             >
-              Add to Itinerary
+              Book Activity
             </Button>
           </Box>
         </Paper>
