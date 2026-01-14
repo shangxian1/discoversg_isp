@@ -1,0 +1,4 @@
+Create a .env file in the frontend folder and get the google api key from google cloud platform
+Delete this template after doing so
+
+GOOGLE_MAPS_API_KEY=

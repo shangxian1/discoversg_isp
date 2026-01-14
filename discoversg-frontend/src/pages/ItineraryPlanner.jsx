@@ -31,7 +31,7 @@ import SnackBarDialog from '../components/layout/SnackBar';
 const BACKGROUND_STRIPE_COLOR = 'rgba(255, 255, 255, 0.7)';
 const LIGHT_RED = '#fce4e4';
 const PRIMARY_RED = '#d32f2f';
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBU06pEAaWjEm9e6uJtP1ks0EID4aMAxF4'; 
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const backgroundStyles = {
   backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 10px, ${BACKGROUND_STRIPE_COLOR} 10px, ${BACKGROUND_STRIPE_COLOR} 20px)`,
@@ -220,43 +220,41 @@ export default function ItineraryPlanner() {
   };
 
   const handleSaveItinerary = async () => {
-    if (!response) return;
-    setSaving(true);
+  if (!response) return;
+  setSaving(true);
 
-    const savePayload = {
-      title: response.itinerary_name || `Trip to ${place}`,
-      budgetLevel: "Moderate", 
-      noOfDays: response.days.length,
-      items: response.days.flatMap(day => 
-        day.itinerary.map(item => ({
-          dayNumber: day.day,
-          activityName: item.place_name,
-          location: item.place_name,
-          startTime: item.time,
-          notes: item.description,
-          activityPicUrl: "_" 
-        }))
-      )
-    };
-    
-    try {
-      const res = await fetch('http://localhost:3000/api/itinerary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(savePayload),
-      });
+  // Retrieve user from localStorage
+  const userData = JSON.parse(localStorage.getItem('user'));
+  const currentUserID = userData?.userID || 1; // Fallback to 1
 
-      if (res.ok) {
-        snackRef.current.handleState('Itinerary saved successfully!');
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (err) {
-      snackRef.current.handleState('Failed to save itinerary.');
-    } finally {
-      setSaving(false);
-    }
+  const savePayload = {
+    userID: currentUserID,
+    title: response.itinerary_name || `Trip to ${place}`,
+    budgetLevel: "Moderate", 
+    noOfDays: response.days.length,
+    // Send the raw days array to be stringified by the backend
+    items: response.days 
   };
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/itinerary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(savePayload),
+    });
+
+    if (res.ok) {
+      snackRef.current.handleState('Itinerary saved successfully!');
+    } else {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Failed to save');
+    }
+  } catch (err) {
+    snackRef.current.handleState(err.message);
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <Box sx={backgroundStyles}>
