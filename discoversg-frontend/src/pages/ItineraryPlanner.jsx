@@ -223,16 +223,24 @@ export default function ItineraryPlanner() {
   if (!response) return;
   setSaving(true);
 
-  // Retrieve user from localStorage
-  const userData = JSON.parse(localStorage.getItem('user'));
-  const currentUserID = userData?.userID || 1; // Fallback to 1
+  
+  const userString = localStorage.getItem('user');
+  
+  
+  let currentUserID = 1; 
+  if (userString) {
+    const userData = JSON.parse(userString);
+    
+    console.log(userData);
+
+    currentUserID = userData.userID || userData.id || userData.user_id || 1;
+  }
 
   const savePayload = {
     userID: currentUserID,
     title: response.itinerary_name || `Trip to ${place}`,
     budgetLevel: "Moderate", 
     noOfDays: response.days.length,
-    // Send the raw days array to be stringified by the backend
     items: response.days 
   };
   
@@ -246,8 +254,7 @@ export default function ItineraryPlanner() {
     if (res.ok) {
       snackRef.current.handleState('Itinerary saved successfully!');
     } else {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to save');
+      throw new Error('Failed to save');
     }
   } catch (err) {
     snackRef.current.handleState(err.message);
