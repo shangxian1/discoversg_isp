@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import ActivityCard from '../components/activity/ActivityCard';
-import ItineraryCard from '../components/activity/ItineraryCard';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ItineraryTimeline from '../components/activity/ItineraryTimeline';
@@ -12,13 +11,13 @@ export default function Activities() {
     const [activities, setActivities] = useState([]);
     const [itinerary, setItinerary] = useState([]);
 
-    // 2. Filter States (Added these)
+    // 2. Filter States
     const [searchQuery, setSearchQuery] = useState('');
     const [budgetFilter, setBudgetFilter] = useState('All');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [locationFilter, setLocationFilter] = useState('All');
 
-    // 3. Dynamic Dropdown Options (Added these)
+    // 3. Dynamic Dropdown Options
     const [uniqueCategories, setUniqueCategories] = useState([]);
     const [uniqueLocations, setUniqueLocations] = useState([]);
 
@@ -29,7 +28,7 @@ export default function Activities() {
             .then(data => {
                 setActivities(data);
 
-                // --- NEW: Automatically find all Categories & Locations from DB ---
+                // Automatically find all Categories & Locations from DB
                 const cats = [...new Set(data.map(item => item.category))].filter(Boolean).sort();
                 const locs = [...new Set(data.map(item => item.location))].filter(Boolean).sort();
                 setUniqueCategories(cats);
@@ -42,7 +41,7 @@ export default function Activities() {
             .then(data => setItinerary(data));
     }, []);
 
-    // --- NEW: The Filtering Engine ---
+    // 4. The Filtering Engine
     const filteredActivities = activities.filter((activity) => {
         // A. Search Logic
         const query = searchQuery.trim().toLowerCase();
@@ -66,18 +65,14 @@ export default function Activities() {
         else if (budgetFilter === 'Medium') matchesBudget = price > 20 && price <= 60;
         else if (budgetFilter === 'High') matchesBudget = price > 60;
 
-        // Combine all filters
         return matchesSearch && matchesCategory && matchesLocation && matchesBudget;
     });
-
-    const featuredActivity = filteredActivities[1];
-    const gridActivities = filteredActivities.slice(1);
 
     return (
         <div className="w-full px-6 py-6">
             <div className="mx-auto w-full max-w-6xl">
 
-                {/* Header & Search (Unchanged) */}
+                {/* Header & Search */}
                 <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div className="flex w-full max-w-xl items-center gap-2 rounded-full bg-gray-100 px-4 py-2">
                         <SearchIcon fontSize="small" />
@@ -97,18 +92,20 @@ export default function Activities() {
                     </button>
                 </div>
 
-                {/* Featured + Itinerary (Unchanged) */}
+                {/* --- TOP SECTION: RETAINED STRUCTURE --- */}
                 <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-6 sm:grid-cols-2">
                     <div className="lg:col-span-3 h-fit">
                         <h2 className="text-lg font-semibold mb-3">Featured Section</h2>
-                        {featuredActivity ? (
-                            <ActivityCard key={featuredActivity.id} activity={featuredActivity} featured />
+                        {activities[0] ? (
+                            <ActivityCard key={activities[0].id} activity={activities[0]} featured />
                         ) : (
                             <div className="p-10 text-center text-gray-500 bg-gray-50 rounded-xl">
                                 No activities found.
                             </div>
                         )}
                     </div>
+
+                    {/* RESTORED: Your original testing itinerary code */}
                     <div className='lg:col-span-3' style={{ maxHeight: '600px', overflowY: 'hidden' }}>
                         <h2 className="text-lg font-semibold mb-3">Itinerary</h2>
                         {itinerary ? (<ItineraryTimeline itinerary={itinerary} />) :
@@ -127,11 +124,10 @@ export default function Activities() {
                     </div>
                 </div>
 
-                {/* --- FILTERS SECTION (Updated with Logic) --- */}
+                {/* Filters Section */}
                 <div className="mb-6 flex flex-wrap items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">Filter by:</span>
 
-                    {/* Budget */}
                     <select
                         value={budgetFilter}
                         onChange={(e) => setBudgetFilter(e.target.value)}
@@ -144,7 +140,6 @@ export default function Activities() {
                         <option value="High">High ($60+)</option>
                     </select>
 
-                    {/* Category (Dynamic) */}
                     <select
                         value={categoryFilter}
                         onChange={(e) => setCategoryFilter(e.target.value)}
@@ -156,7 +151,6 @@ export default function Activities() {
                         ))}
                     </select>
 
-                    {/* Location (Dynamic) */}
                     <select
                         value={locationFilter}
                         onChange={(e) => setLocationFilter(e.target.value)}
@@ -169,9 +163,9 @@ export default function Activities() {
                     </select>
                 </div>
 
-                {/* Grid (Now uses filteredActivities) */}
+                {/* --- GRID SECTION: ONLY uses filteredActivities --- */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {gridActivities.map((activity) => (
+                    {filteredActivities.map((activity) => (
                         <ActivityCard key={activity.id} activity={activity} compact />
                     ))}
                 </div>
