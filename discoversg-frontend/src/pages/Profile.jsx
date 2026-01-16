@@ -6,7 +6,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const ProfilePage = () => {
-    const storedUser = JSON.parse(localStorage.getItem('user')) || {};
+    const storedUser = JSON.parse(sessionStorage.getItem('user')) || {};
 
     const [profileData, setProfileData] = useState({
         name: storedUser.name || '',
@@ -67,7 +67,7 @@ const ProfilePage = () => {
                     userDescription: profileData.description, 
                     profilePicUrl: profileData.profilePicUrl 
                 };
-                localStorage.setItem('user', JSON.stringify(updatedUserLocal));
+                sessionStorage.setItem('user', JSON.stringify(updatedUserLocal));
                 alert("Profile saved successfully!");
                 setProfileData(prev => ({ ...prev, password: '' })); 
                 window.dispatchEvent(new Event("storage")); 

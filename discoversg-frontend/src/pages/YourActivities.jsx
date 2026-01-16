@@ -15,7 +15,7 @@ export default function HistoryPage() {
     // 1. Get Logged In User ID
     const user = (() => {
         try {
-            return JSON.parse(localStorage.getItem('user') || 'null');
+            return JSON.parse(sessionStorage.getItem('user') || 'null');
         } catch {
             return null;
         }

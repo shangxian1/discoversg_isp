@@ -224,7 +224,7 @@ export default function ItineraryPlanner() {
   setSaving(true);
 
   
-  const userString = localStorage.getItem('user');
+  const userString = sessionStorage.getItem('user');
   
   
   let currentUserID = 1; 

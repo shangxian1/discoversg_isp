@@ -9,7 +9,7 @@ const Navbar = () => {
     const navigate = useNavigate();
 
     // 1. Initialize state with current localStorage data
-    const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user')));
+    const [userData, setUserData] = useState(JSON.parse(sessionStorage.getItem('user')));
     const [accountMenu, setAccountMenu] = useState(null);
     const open = Boolean(accountMenu);
 

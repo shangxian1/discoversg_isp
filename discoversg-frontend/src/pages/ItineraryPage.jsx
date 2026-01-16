@@ -19,7 +19,7 @@ const ItineraryPage = () => {
   const snackRef = useRef(null);
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user'));
+    const userData = JSON.parse(sessionStorage.getItem('user'));
     const userID = userData?.userID || userData?.id || 1; 
 
     // Fetch all itineraries for this user

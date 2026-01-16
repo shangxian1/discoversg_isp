@@ -12,7 +12,7 @@ import ContentSection from '../components/home/ContentSection';
 
 const UserHome = () => {
   // Retrieve the user object from localStorage
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = JSON.parse(sessionStorage.getItem('user'));
 
   // --- 2. RESTORE THE STATE & LOGIC ---
   const [recommendations, setRecommendations] = useState([]);

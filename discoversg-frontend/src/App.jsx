@@ -52,7 +52,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
+    const user = sessionStorage.getItem('user');
     setIsLoggedIn(!!user);
   }, []);
 

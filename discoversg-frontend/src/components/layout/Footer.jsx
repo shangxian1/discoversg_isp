@@ -1,19 +1,29 @@
 import React from 'react';
-import { Box, Container, Grid, Typography, IconButton } from '@mui/material';
-// 1. Import the specific icons
+import { Box, Container, Grid, Typography } from '@mui/material';
+import { Link } from 'react-router-dom'; // 1. Import Link for navigation
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import XIcon from '@mui/icons-material/Twitter'; // If this fails, use '@mui/icons-material/Twitter'
+import XIcon from '@mui/icons-material/Twitter'; 
 
-// 2. Import your logo (ensure path is correct)
 import logo from '/assets/discoversg.png';
 
 const Footer = () => {
-  // Helper array for the social icons
+  // Define mapping for links to routes
+  const column1Links = [
+    { text: 'Activity', path: '/activities' },
+    { text: 'Planner', path: '/planner' },
+  ];
+
+  const column2Links = [
+    { text: 'Itinerary', path: '/itinerary' },
+    { text: 'Feed', path: '/feed' },
+    { text: 'Contact us!', path: '/contact' }, // Ensure this route exists or update path
+  ];
+
   const socialMedia = [
-    { icon: <FacebookIcon />, key: 'fb' },
-    { icon: <InstagramIcon />, key: 'ig' },
-    { icon: <XIcon />, key: 'x' },
+    { icon: <FacebookIcon />, key: 'fb', url: 'https://facebook.com' },
+    { icon: <InstagramIcon />, key: 'ig', url: 'https://instagram.com' },
+    { icon: <XIcon />, key: 'x', url: 'https://twitter.com' },
   ];
 
   return (
@@ -23,9 +33,20 @@ const Footer = () => {
           {/* Column 1 */}
           <Grid item xs={6} md={2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {['Activity', 'Food', 'Planner'].map((text) => (
-                <Typography key={text} variant="body1" sx={{ textDecoration: 'underline', cursor: 'pointer', '&:hover': { color: '#ccc' } }}>
-                  {text}
+              {column1Links.map((item) => (
+                <Typography 
+                  key={item.text} 
+                  component={Link} // Makes Typography behave like a Link
+                  to={item.path}
+                  variant="body1" 
+                  sx={{ 
+                    color: 'white',
+                    textDecoration: 'underline', 
+                    cursor: 'pointer', 
+                    '&:hover': { color: '#ccc' } 
+                  }}
+                >
+                  {item.text}
                 </Typography>
               ))}
             </Box>
@@ -34,9 +55,20 @@ const Footer = () => {
           {/* Column 2 */}
           <Grid item xs={6} md={2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {['Itinerary', 'Feed', 'Contact us!'].map((text) => (
-                <Typography key={text} variant="body1" sx={{ textDecoration: 'underline', cursor: 'pointer', '&:hover': { color: '#ccc' } }}>
-                  {text}
+              {column2Links.map((item) => (
+                <Typography 
+                  key={item.text} 
+                  component={Link} 
+                  to={item.path}
+                  variant="body1" 
+                  sx={{ 
+                    color: 'white',
+                    textDecoration: 'underline', 
+                    cursor: 'pointer', 
+                    '&:hover': { color: '#ccc' } 
+                  }}
+                >
+                  {item.text}
                 </Typography>
               ))}
             </Box>
@@ -65,7 +97,7 @@ const Footer = () => {
 
           {/* Center: Copyright */}
           <Typography variant="caption" sx={{ color: 'grey.500' }}>
-            ©DiscoverSG - All rights reserved 2025
+            ©DiscoverSG - All rights reserved 2026
           </Typography>
 
           {/* Right: Social Icons */}
@@ -73,18 +105,22 @@ const Footer = () => {
             {socialMedia.map((item) => (
               <Box 
                 key={item.key} 
+                component="a" // Use anchor tag for external links
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{ 
                   width: 45, 
                   height: 45, 
                   borderRadius: '50%', 
                   bgcolor: '#196f75', 
-                  display: 'flex',          // Added flex to center the icon
-                  justifyContent: 'center', // Center horizontally
-                  alignItems: 'center',     // Center vertically
-                  color: 'white',           // Make icon white
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  color: 'white', 
                   cursor: 'pointer',
                   transition: '0.3s',
-                  '&:hover': { bgcolor: 'secondary.light' }
+                  '&:hover': { bgcolor: '#145a5f' } 
                 }} 
               >
                 {item.icon}

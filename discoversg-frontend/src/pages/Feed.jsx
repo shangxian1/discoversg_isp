@@ -16,7 +16,7 @@ const Feed = () => {
   const [plannerGuides, setPlannerGuides] = useState([]);
   const [savedLocalVideos, setSavedLocalVideos] = useState([]);
   const [savedPlannerGuides, setSavedPlannerGuides] = useState([]);
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = JSON.parse(sessionStorage.getItem('user'));
   const { ref, inView } = useInView();
   const snackRef = useRef();
 
