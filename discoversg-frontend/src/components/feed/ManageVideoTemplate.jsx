@@ -155,7 +155,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
       {title == 'Description' && <p className="text-l">Please provide more information and any hidden secrets about your location</p>}
       <TextField
         label={label}
-        type={title == 'Date' && 'date'}
+        type={title == 'Date' ? 'date' : 'text'}
         fullWidth
         multiline={title === 'Description'}
         rows={title === 'Description' ? 4 : 1}
