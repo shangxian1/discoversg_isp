@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel, Snackbar, Fade } from '@mui/material';
+import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel, Snackbar, Fade, Typography, Fab } from '@mui/material';
 import { ToggleFeedButton, ToggleCategoryButton } from '../components/feed/Buttons';
 import { Search as SearchIcon } from '@mui/icons-material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
 
@@ -10,12 +10,20 @@ import LocalVideoTemplate from '../components/feed/LocalVideoTemplate';
 import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
 import SavedCardTemplate from '../components/feed/SavedCardTemplate';
 import SnackBarDialog from '../components/layout/SnackBar';
+import ManageVideoTemplate from '../components/feed/ManageVideoTemplate';
 
 const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
   const [plannerGuides, setPlannerGuides] = useState([]);
   const [savedLocalVideos, setSavedLocalVideos] = useState([]);
   const [savedPlannerGuides, setSavedPlannerGuides] = useState([]);
+  const [creatorMedia, setCreatorMedia] = useState([]);
+  const [totalSaves, setTotalSaves] = useState(0);
+
+  // For editing media
+  const [selectedID, setSelectedID] = useState(null);
+  const [localVideo, setLocalVideo] = useState({});
+
   const userData = JSON.parse(localStorage.getItem('user'));
   const { ref, inView } = useInView();
   const snackRef = useRef();
@@ -52,10 +60,45 @@ const Feed = () => {
         snackRef.current.handleState(result.message);
         setActiveScreen('savedFeeds');
         window.scrollTo(0, 0);
-        
+
       })
       .catch((error) => console.error(error));
   }
+
+  // When the add button is clicked, reset and clear form
+  const addFunction = () => {
+    setSelectedID(null);
+    setLocalVideo({});
+    setActiveScreen('manageFeeds');
+  };
+
+  // This calculates the filtered list
+  const getFilteredItems = (items) => {
+    if (!items || !Array.isArray(items)) return [];
+    let result = [...items];
+
+    // Sort by likes
+    if (isLikesChecked) {
+      result.sort((a, b) => b.noOfLikes - a.noOfLikes);
+    } else {
+      result.sort((a, b) => new Date(b.datePosted) - new Date(a.datePosted));
+    }
+
+    // Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(item =>
+        // Added optional chaining ?. to prevent title errors
+        item.title?.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  };
+
+  // Retieve filtered videos/guides based on above function
+  const visibleVideos = getFilteredItems(savedLocalVideos);
+  const visibleGuides = getFilteredItems(savedPlannerGuides);
 
   const fetchLocalVideos = async ({ pageParam = 1, queryKey }) => {
     const [_key, { isRecent, isLikes, search }] = queryKey;
@@ -99,35 +142,62 @@ const Feed = () => {
       },
     });
 
+  //Retrieving saved planner guides / videos
+  useEffect(() => {
+    if (activeScreen !== 'savedFeeds') return;
+
+    const fetchSavedData = async () => {
+      try {
+        const [videosRes, guidesRes] = await Promise.all([
+          fetch(`http://localhost:3000/api/saved-videos/${userData.id}`),
+          fetch(`http://localhost:3000/api/saved-guides/${userData.id}`)
+        ]);
+
+        const videos = await videosRes.json();
+        const guides = await guidesRes.json();
+        console.log(videos);
+        setSavedLocalVideos(videos);
+        setSavedPlannerGuides(guides);
+      } catch (error) {
+        console.error("Failed to fetch saved items:", error);
+      }
+    };
+
+    fetchSavedData();
+  }, [activeScreen, userData.id]);
+
+  // Retrieve All Planner Guides + Content Creator Analytics
   useEffect(() => {
     fetch('http://localhost:3000/api/planner-guides')
       .then(res => res.json())
       .then(data => {
         setPlannerGuides(data);
       });
-    fetch('http://localhost:3000/api/saved-videos')
+    fetch(`http://localhost:3000/api/analytics/${userData.id}`)
       .then(res => res.json())
       .then(data => {
-        isLikesChecked && data.sort((a, b) => b.noOfLikes - a.noOfLikes);
-        if (searchQuery && searchQuery.trim().length > 0) {
-          data = data.filter(video =>
-            video.title.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        }
-        setSavedLocalVideos(data);
+        const videoSaves = data["local-videos"].reduce((sum, item) => sum + (item.noOfSaves || 0), 0);
+        const guideSaves = data["guides"].reduce((sum, item) => sum + (item.noOfSaves || 0), 0);
+        const totalSaves = videoSaves + guideSaves;
+        setCreatorMedia(data);
+        setTotalSaves(totalSaves);
       });
-    fetch('http://localhost:3000/api/saved-guides')
+  }, [activeScreen]);
+
+  // Retrieve media based on clicking on "Edit" button
+  useEffect(() => {
+    if (!selectedID) {
+      setLocalVideo({}); // Clear data if no ID is selected
+      return;
+    }
+
+    fetch(`http://localhost:3000/api/local-video/${selectedID}`)
       .then(res => res.json())
       .then(data => {
-        isLikesChecked && data.sort((a, b) => b.noOfLikes - a.noOfLikes);
-        if (searchQuery && searchQuery.trim().length > 0) {
-          data = data.filter(video =>
-            video.title.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        }
-        setSavedPlannerGuides(data);
-      });
-  }, [savedLocalVideos, isLikesChecked, searchQuery]);
+        setLocalVideo(data);
+      })
+      .catch(err => console.error("Error fetching video:", err));
+  }, [activeScreen, selectedID]);
 
   //Detection when the viewport has reached to the end of the page
   useEffect(() => {
@@ -135,7 +205,6 @@ const Feed = () => {
       fetchNextPage();
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
 
   return <>
     <Grid container spacing={5} className="m-5">
@@ -164,36 +233,63 @@ const Feed = () => {
         </Stack>
 
         <Stack spacing={2} className='p-4 pb-4'>
-          <p className="text-xl font-bold">Filter</p>
-          <FormGroup>
-            <FormControlLabel className='w-fit rounded-xs pr-3' control={
-              <Checkbox
-                checked={isRecentChecked}
-                onChange={handleRecentChange}
-              />
-            } label="Recent Feeds" />
-            {activeCategory == 'localVideos' &&
-              <FormControlLabel className='w-fit rounded-xs pr-3' control={
-                <Checkbox
-                  checked={isLikesChecked}
-                  onChange={handleLikesChange}
-                />
-              } label="Top Rated" />
-            }
-          </FormGroup>
+          {activeScreen !== 'yourFeeds' && activeScreen !== 'manageFeeds' && (
+            <>
+              <p className="text-xl font-bold">Filter</p>
+              <FormGroup>
+                <FormControlLabel className='w-fit rounded-xs pr-3' control={
+                  <Checkbox
+                    checked={isRecentChecked}
+                    onChange={handleRecentChange}
+                  />
+                } label="Recent Feeds" />
+                {activeCategory == 'localVideos' &&
+                  <FormControlLabel className='w-fit rounded-xs pr-3' control={
+                    <Checkbox
+                      checked={isLikesChecked}
+                      onChange={handleLikesChange}
+                    />
+                  } label="Top Rated" />
+                }
+              </FormGroup>
+            </>
+          )}
+
         </Stack>
       </Grid>
 
 
-      <Grid size={9} sx={{ height: '100%' }}>
+      <Grid size={9} sx={{ height: 'auto' }}>
         {/* Header & Search Bar */}
         <Container className='m-3! mx-0! px-0! flex justify-between items-center'>
-          <p className='text-3xl font-bold'>{activeScreen == 'allFeeds' ? 'Feeds' : 'Saved Feeds'}</p>
+          <div className='flex items-center'>
+            {activeScreen == 'manageFeeds' && (
+              <IconButton color="primary" className='mr-1!' aria-label="go back" onClick={() => setActiveScreen('yourFeeds')}>
+                <ArrowBackIcon />
+              </IconButton>
+            )}
+
+            <p className='text-3xl font-bold'>{{
+              allFeeds: 'Feeds',
+              savedFeeds: 'Saved Feeds',
+              yourFeeds: 'Your Feeds',
+              manageFeeds: 'Manage Feed'
+            }[activeScreen]}</p>
+          </div>
           <div className='flex justify-between w-max'>
-            <Paper component="form" sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: 5, boxShadow: 3 }}>
-              <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
-              <InputBase sx={{ ml: 1, flex: 1 }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." />
-            </Paper>
+            {activeScreen == 'savedFeeds' || activeScreen == 'allFeeds' ? (
+              <Paper component="form" sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: 5, boxShadow: 3 }}>
+                <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
+                <InputBase sx={{ ml: 1, flex: 1 }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." />
+              </Paper>
+            ) : activeScreen == 'yourFeeds' ? (
+              <Button variant="contained" onClick={addFunction} className='m-0! mt-2!'>Add Media</Button>
+            ) : (
+              null
+            )
+
+            }
+
           </div>
         </Container>
 
@@ -238,12 +334,38 @@ const Feed = () => {
 
         {/* Saved Local Videos */}
         {activeScreen == 'savedFeeds' && activeCategory == 'localVideos' && (
-          Array.isArray(savedLocalVideos) ? savedLocalVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedLocalVideos.message
+          visibleVideos.length !== 0 ? visibleVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedLocalVideos.message
         )}
-        
+
         {/* Saved Planner Guides */}
         {activeScreen == 'savedFeeds' && activeCategory == 'plannerGuides' && (
-          Array.isArray(savedPlannerGuides) ? savedPlannerGuides.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedPlannerGuides.message
+          visibleGuides.length !== 0 ? visibleGuides.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedPlannerGuides.message
+        )}
+
+        {/* Content Creator View (Analytics) */}
+        {activeScreen == 'yourFeeds' && <>
+          <Grid container spacing={5}>
+            <Grid size={6}>
+              <Typography align="center" className="bg-[#C21010] h-fit content-center rounded-2xl py-3 text-white">
+                <p className="text-5xl">{creatorMedia.totalLikes}</p>
+                <p className="text-xl uppercase">video likes</p>
+              </Typography>
+            </Grid>
+            <Grid size={6}>
+              <Typography align="center" className="bg-[#C21010] h-fit content-center rounded-2xl py-3 text-white">
+                <p className="text-5xl">{totalSaves}</p>
+                <p className="text-xl uppercase">saves</p>
+              </Typography>
+
+            </Grid>
+          </Grid>
+          {activeCategory == 'localVideos' && (
+            Array.isArray(creatorMedia['local-videos']) ? creatorMedia['local-videos'].map((media) => <SavedCardTemplate savedMedia={media} key={media.postID} setScreen={setActiveScreen} onSelect={(id) => setSelectedID(id)}></SavedCardTemplate>) : creatorMedia['local-videos'].message
+          )}
+        </>}
+
+        {activeScreen == 'manageFeeds' && (
+          <ManageVideoTemplate setScreen={setActiveScreen} video={localVideo}></ManageVideoTemplate>
         )}
       </Grid>
     </Grid>

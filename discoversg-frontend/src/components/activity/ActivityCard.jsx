@@ -86,7 +86,7 @@ export default function ActivityCard({ activity, featured }) {
           fontSize: '0.85rem',
           mb: 1
         }}>
-          {featured ? description : summary}
+          {featured ? description : summary} 
         </Typography>
       </CardContent>
 
