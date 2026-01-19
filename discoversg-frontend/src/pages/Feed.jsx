@@ -38,8 +38,12 @@ const Feed = () => {
   const handleLikesChange = (event) => setLikesChecked(event.target.checked);
 
   const handleSave = async (videoData) => {
+    if (!userData) {
+      snackRef.current.handleState('Login to save media.');
+      setActiveScreen('savedFeeds');
+      return;
+    }
     const myHeaders = new Headers();
-    const userData = JSON.parse(localStorage.getItem('user'));
     myHeaders.append("Content-Type", "application/json");
     console.log(videoData);
     const raw = {
@@ -144,7 +148,7 @@ const Feed = () => {
 
   //Retrieving saved planner guides / videos
   useEffect(() => {
-    if (activeScreen !== 'savedFeeds') return;
+    if (!userData || activeScreen !== 'savedFeeds') return;
 
     const fetchSavedData = async () => {
       try {
@@ -164,7 +168,7 @@ const Feed = () => {
     };
 
     fetchSavedData();
-  }, [activeScreen, userData.id]);
+  }, [activeScreen]);
 
   // Retrieve All Planner Guides + Content Creator Analytics
   useEffect(() => {
@@ -173,6 +177,7 @@ const Feed = () => {
       .then(data => {
         setPlannerGuides(data);
       });
+    if (!userData) return;
     fetch(`http://localhost:3000/api/analytics/${userData.id}`)
       .then(res => res.json())
       .then(data => {
@@ -212,15 +217,15 @@ const Feed = () => {
       {/* Control Panel */}
       <Grid size={3} rowSpacing={10} sx={{ backgroundColor: '#ECECEE', borderRadius: '0.5rem', position: 'sticky', top: '5%', height: '100%' }}>
         <Stack direction="row" spacing={2} className='p-4 pb-4'>
-          <Avatar src={userData.profilePicUrl && '/broken-image.jpg'} sx={{ bgcolor: '#b39ddb', border: '2px solid white' }}>
-            {!userData.profilePicUrl && (userData.name?.charAt(0).toUpperCase() || 'U')}
+          <Avatar src={userData ? userData.profilePicUrl : '/broken-image.jpg'} sx={{ bgcolor: '#b39ddb', border: '2px solid white' }}>
+            {userData ? (userData.name?.charAt(0).toUpperCase() || 'C') : 'G'}
           </Avatar>
-          <p className="text-l self-center">{userData.name}</p>
+          <p className="text-l self-center">{userData ? userData.name : 'Guest'}</p>
         </Stack>
 
         <ToggleFeedButton id='allFeeds' label='All Feeds' onClick={() => setActiveScreen('allFeeds')} state={activeScreen}></ToggleFeedButton>
         <ToggleFeedButton id='savedFeeds' label='Saved' onClick={() => setActiveScreen('savedFeeds')} state={activeScreen}></ToggleFeedButton>
-        {userData.role == 'Content Creator' &&
+        {userData && userData.role == 'Content Creator' &&
           <ToggleFeedButton id='yourFeeds' label='Your Feeds' onClick={() => setActiveScreen('yourFeeds')} state={activeScreen}></ToggleFeedButton>
         }
 
@@ -334,12 +339,12 @@ const Feed = () => {
 
         {/* Saved Local Videos */}
         {activeScreen == 'savedFeeds' && activeCategory == 'localVideos' && (
-          visibleVideos.length !== 0 ? visibleVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedLocalVideos.message
+          !userData ? 'Please login to save videos.' : visibleVideos.length !== 0 ? visibleVideos.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedLocalVideos.message
         )}
 
         {/* Saved Planner Guides */}
         {activeScreen == 'savedFeeds' && activeCategory == 'plannerGuides' && (
-          visibleGuides.length !== 0 ? visibleGuides.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedPlannerGuides.message
+          !userData ? 'Please login to save guides.' : visibleGuides.length !== 0 ? visibleGuides.map((media) => <SavedCardTemplate savedMedia={media} key={media.savedMediaID} onUnsave={handleSave}></SavedCardTemplate>) : savedPlannerGuides.message
         )}
 
         {/* Content Creator View (Analytics) */}
