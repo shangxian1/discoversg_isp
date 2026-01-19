@@ -4,12 +4,10 @@ import {
   Routes,
   Route,
   Outlet,
-  Navigate
 } from 'react-router-dom';
 
 import { ThemeProvider, CssBaseline, GlobalStyles, Box } from '@mui/material';
 import { theme } from '../theme/theme';
-import React, { useState, useEffect } from 'react';
 import NavBar from './components/layout/Header';
 import HeroCarousel from './components/home/HeroCarousel';
 import ContentSection from './components/home/ContentSection';
@@ -27,6 +25,7 @@ import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import YourActivities from './pages/YourActivities'
+import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 
 const HomeContent = () => (
   <>
@@ -49,13 +48,6 @@ const MainLayout = () => (
 
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const user = sessionStorage.getItem('user');
-    setIsLoggedIn(!!user);
-  }, []);
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -66,27 +58,28 @@ export default function App() {
 
       <Routes>
         <Route element={<MainLayout />}>
-         
+          {/* Public Routes section */}
+          <Route element={<PublicRoutes />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/" element={<HomeContent />} />
+          </Route>
 
-          {/* Dedicated route for the User Home Page (Dashboard) */}
-          <Route
-            path="/"
-            element={isLoggedIn ? <Navigate to="/home" replace /> : <HomeContent />}
-          />
-          <Route path="/home" element={<UserHome />} />
-          <Route path="/activities" element={<Activities />} />
+          {/* Protected Routes section */}
+          <Route element={<ProtectedRoutes />}>
+            <Route path="/home" element={<UserHome />} />
+            <Route path="/itinerary" element={<ItineraryPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/activity/:id" element={<ActivityDetails />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="/your-activities" element={<YourActivities />} />
+          </Route>
+          
           <Route path="/planner" element={<TripPlanner />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path='/feed' element={<Feed />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/itinerary" element={<ItineraryPage />} />
-          <Route path="/activity/:id" element={<ActivityDetails />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
-          <Route path="/your-activities" element={<YourActivities />} />
-
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/activities" element={<Activities />} />
         </Route>
       </Routes>
     </ThemeProvider>

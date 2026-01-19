@@ -8,7 +8,7 @@ const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // 1. Initialize state with current localStorage data
+    // 1. Initialize state with current session storage data
     const [userData, setUserData] = useState(JSON.parse(sessionStorage.getItem('user')));
     const [accountMenu, setAccountMenu] = useState(null);
     const open = Boolean(accountMenu);
@@ -28,7 +28,7 @@ const Navbar = () => {
     // 2. Listen for storage changes to update the bubble instantly
     useEffect(() => {
         const handleStorageChange = () => {
-            setUserData(JSON.parse(localStorage.getItem('user')));
+            setUserData(JSON.parse(sessionStorage.getItem('user')));
         };
 
         // Listen for the custom event dispatched from ProfilePage
