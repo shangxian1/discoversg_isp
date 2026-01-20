@@ -12,7 +12,7 @@ const ActivityDetails = () => {
 
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Booking State
   const [selectedDate, setSelectedDate] = useState('');
   const [pax, setPax] = useState(1);
@@ -23,22 +23,22 @@ const ActivityDetails = () => {
     // If it's already a full link (e.g. from Unsplash), use it
     if (filename.startsWith('http')) return filename;
     // Otherwise, assume it's in the FRONTEND public/assets folder
-    return `/assets/${filename}`; 
+    return `/assets/${filename}`;
   };
 
   useEffect(() => {
     // 1. Instant Load: If we came from the list page, use that data first
     if (location.state && location.state.image) {
-       setActivity({
-         ...location.state,
-         finalImage: getImageUrl(location.state.image || location.state.activityPicUrl)
-       });
-       setLoading(false);
+      setActivity({
+        ...location.state,
+        finalImage: getImageUrl(location.state.image || location.state.activityPicUrl)
+      });
+      setLoading(false);
     }
 
     // 2. Fetch Fresh Data (in case of direct link or refresh)
     // Make sure your backend route matches this (plural /activities/)
-    fetch(`http://localhost:3000/api/activity/${id}`) 
+    fetch(`http://localhost:3000/api/activity/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Activity not found");
         return res.json();
@@ -75,6 +75,7 @@ const ActivityDetails = () => {
         price: activity.price,
         date: selectedDate,
         pax: parseInt(pax),
+        noOfPax: parseInt(pax),
         totalPrice: activity.price * pax
       },
     });
@@ -91,15 +92,15 @@ const ActivityDetails = () => {
         </IconButton>
 
         <Paper elevation={0} sx={{ borderRadius: 8, overflow: 'hidden', bgcolor: '#e0d1d1', pb: 6 }}>
-          
+
           {/* IMAGE SECTION */}
-          <Box 
-            component="img" 
-            src={activity.finalImage} 
+          <Box
+            component="img"
+            src={activity.finalImage}
             alt={activity.activityName}
             // Fallback if the specific file is missing
             onError={(e) => { e.target.src = 'https://via.placeholder.com/600x400?text=Image+Missing'; }}
-            sx={{ width: '100%', height: 450, objectFit: 'cover' }} 
+            sx={{ width: '100%', height: 450, objectFit: 'cover' }}
           />
 
           <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -149,7 +150,7 @@ const ActivityDetails = () => {
             </Box>
 
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#1a8a8a' }}>
-               Total: ${(activity.price * pax).toFixed(2)}
+              Total: ${(activity.price * pax).toFixed(2)}
             </Typography>
 
             <Button

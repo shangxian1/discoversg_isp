@@ -12,7 +12,7 @@ router.post('/bookings/create-for-activity', async (req, res) => {
     try {
         const userId = Number(req.body?.userId);
         const activityId = Number(req.body?.activityId);
-        const noOfPax = Number(req.body?.noOfPax ?? 1);
+        const noOfPax = Number(req.body?.noOfPax ?? req.body?.pax ?? 1);
 
         if (!Number.isInteger(userId) || userId <= 0) {
             return res.status(400).json({ error: 'userId must be a positive integer' });

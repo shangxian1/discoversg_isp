@@ -12,11 +12,20 @@ export default function Payment() {
     const activityName = String(state?.activityName ?? '').trim();
     const activityId = Number(state?.activityId);
     const price = Number(state?.price ?? 0);
+    const noOfPax = Number(state?.noOfPax ?? state?.pax ?? 1);
+
+    const unitPrice = Number.isFinite(price) ? price : 0;
+    const computedTotal = unitPrice * (Number.isFinite(noOfPax) ? noOfPax : 0);
 
     const isFree = useMemo(() => !Number.isFinite(price) || price <= 0, [price]);
 
     const handlePay = async () => {
         setError('');
+
+        if (!Number.isInteger(noOfPax) || noOfPax <= 0) {
+            setError('Please select a valid pax size before continuing.');
+            return;
+        }
 
         const user = (() => {
             try {
@@ -51,7 +60,7 @@ export default function Payment() {
                 body: JSON.stringify({
                     userId,
                     activityId,
-                    noOfPax: 1,
+                    noOfPax,
                 }),
             });
 
@@ -127,8 +136,16 @@ export default function Payment() {
                                 {activityName}
                             </Typography>
 
-                            <Typography sx={{ mb: 3 }}>
-                                Price: {isFree ? 'Free' : `$${price}`}
+                            <Typography sx={{ mb: 1 }}>
+                                Pax: {Number.isFinite(noOfPax) ? noOfPax : 1}
+                            </Typography>
+
+                            <Typography sx={{ mb: 1 }}>
+                                Price / Pax: {isFree ? 'Free' : `$${unitPrice.toFixed(2)}`}
+                            </Typography>
+
+                            <Typography sx={{ mb: 3, fontWeight: 700 }}>
+                                Total: {isFree ? 'Free' : `$${computedTotal.toFixed(2)}`}
                             </Typography>
                         </>
                     )}
