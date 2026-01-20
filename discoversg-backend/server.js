@@ -17,6 +17,7 @@ const algoRoutes = require('./routes/algo_route');
 const paymentRoutes = require('./routes/payment_routes');
 const historyRoutes = require('./routes/history_route');
 const bookingRoutes = require('./routes/booking_routes');
+const contactRoutes = require('./routes/contact_routes');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -29,7 +30,8 @@ app.use('/api', authRoutes);
 app.use('/api', algoRoutes);
 app.use('/api', feedRoutes);
 app.use('/api', paymentRoutes);
-app.use('/api',historyRoutes);
+app.use('/api', historyRoutes);
 app.use('/api', bookingRoutes);
+app.use('/api', contactRoutes);
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));

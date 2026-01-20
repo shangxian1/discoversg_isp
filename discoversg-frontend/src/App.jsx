@@ -25,6 +25,7 @@ import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import YourActivities from './pages/YourActivities'
+import Contact from './pages/Contact';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 
 const HomeContent = () => (
@@ -76,10 +77,11 @@ export default function App() {
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="/your-activities" element={<YourActivities />} />
           </Route>
-          
+
           <Route path="/planner" element={<TripPlanner />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/activities" element={<Activities />} />
+          <Route path="/contact" element={<Contact />} />
         </Route>
       </Routes>
     </ThemeProvider>
