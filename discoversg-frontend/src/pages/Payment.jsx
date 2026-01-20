@@ -42,11 +42,6 @@ export default function Payment() {
             return;
         }
 
-        if (isFree) {
-            navigate('/itinerary');
-            return;
-        }
-
         setLoading(true);
         try {
             // 1) Create a pending booking first so we can link it to Stripe.
@@ -68,6 +63,21 @@ export default function Payment() {
             const bookingId = bookingData?.bookingId;
             if (!bookingId) {
                 throw new Error('Booking ID missing');
+            }
+
+            // Free activities: confirm booking without Stripe.
+            if (isFree) {
+                const confirmRes = await fetch('http://localhost:3000/api/payments/confirm-free', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId }),
+                });
+                const confirmData = await confirmRes.json();
+                if (!confirmRes.ok) {
+                    throw new Error(confirmData?.error || 'Failed to confirm free booking');
+                }
+                navigate('/your-activities');
+                return;
             }
 
             // 2) Create Stripe checkout session for that booking.

@@ -162,6 +162,59 @@ router.post('/payments/confirm', async (req, res) => {
     }
 });
 
+// Confirm a free booking (no Stripe). Creates a payment record with amount 0.
+router.post('/payments/confirm-free', async (req, res) => {
+    try {
+        const bookingId = Number(req.body?.bookingId);
+        if (!Number.isInteger(bookingId) || bookingId <= 0) {
+            return res.status(400).json({ error: 'bookingId must be a positive integer' });
+        }
+
+        if (!global.db) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const [rows] = await global.db.execute(
+            `SELECT 
+                b.bookingID,
+                b.status AS bookingStatus,
+                a.price
+            FROM booking b
+            JOIN activitysession s ON s.sessionID = b.sessionID
+            JOIN activity a ON a.activityID = s.activityID
+            WHERE b.bookingID = ?
+            LIMIT 1`,
+            [bookingId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        const booking = rows[0];
+        if (booking.bookingStatus !== 'PENDING') {
+            return res.status(400).json({ error: `Booking status must be PENDING (got ${booking.bookingStatus})` });
+        }
+
+        const unitPrice = Number(booking.price);
+        if (Number.isFinite(unitPrice) && unitPrice > 0) {
+            return res.status(400).json({ error: 'This booking is not free' });
+        }
+
+        await global.db.execute("UPDATE booking SET status = 'PAID' WHERE bookingID = ?", [bookingId]);
+        await global.db.execute(
+            "INSERT INTO payment (bookingID, amount, paymentMethod, paymentStatus, paidAt) VALUES (?, 0.00, 'FREE', 'SUCCESS', NOW()) " +
+            "ON DUPLICATE KEY UPDATE amount = VALUES(amount), paymentMethod = VALUES(paymentMethod), paymentStatus = 'SUCCESS', paidAt = NOW()",
+            [bookingId]
+        );
+
+        return res.status(200).json({ success: true, bookingId });
+    } catch (error) {
+        console.error('payments/confirm-free error:', error);
+        return res.status(500).json({ error: 'Failed to confirm free booking' });
+    }
+});
+
 router.post('/payments/refund', async (req, res) => {
     try {
         const stripeSecretKey = process.env.STRIPE_API_KEY;
