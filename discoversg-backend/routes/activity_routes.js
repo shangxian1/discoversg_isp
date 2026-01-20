@@ -71,7 +71,7 @@ router.get('/activity/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid activity id' });
     }
 
-    const [rows] = await db.execute(
+   const [rows] = await db.execute(
       `SELECT 
         a.activityID,
         a.activityName,
