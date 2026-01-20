@@ -220,20 +220,24 @@ export default function ItineraryPlanner() {
   };
 
   const handleSaveItinerary = async () => {
-  if (!response) return;
-  setSaving(true);
+    if (!response) return;
+    setSaving(true);
 
-  
-  const userString = sessionStorage.getItem('user');
-  
-  
-  let currentUserID = 1; 
-  if (userString) {
-    const userData = JSON.parse(userString);
     
-    console.log(userData);
+    const userString = sessionStorage.getItem('user');
+    
+    
+    let currentUserID = 1; 
+    if (userString) {
+      const userData = JSON.parse(userString);
+      
+      console.log(userData);
 
-    currentUserID = userData.userID || userData.id || userData.user_id || 1;
+      currentUserID = userData.userID || userData.id || userData.user_id || 1;
+    } else {
+      alert('You must be logged in to save itineraries.');
+      setSaving(false);
+      return;
   }
 
   const savePayload = {
