@@ -27,6 +27,7 @@ import PaymentCancel from './pages/PaymentCancel';
 import YourActivities from './pages/YourActivities'
 import Contact from './pages/Contact';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
+import ItineraryDisplay from './pages/ItineraryDisplay';
 
 const HomeContent = () => (
   <>
@@ -70,6 +71,7 @@ export default function App() {
           <Route element={<ProtectedRoutes />}>
             <Route path="/home" element={<UserHome />} />
             <Route path="/itinerary" element={<ItineraryPage />} />
+            <Route path="/planner-result" element={<ItineraryDisplay />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/activity/:id" element={<ActivityDetails />} />
             <Route path="/payment" element={<Payment />} />
