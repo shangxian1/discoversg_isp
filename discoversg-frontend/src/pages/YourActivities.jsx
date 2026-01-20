@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -7,6 +8,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import { CircularProgress } from '@mui/material';
 
 export default function HistoryPage() {
+    const navigate = useNavigate();
     const [history, setHistory] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
@@ -215,7 +217,10 @@ export default function HistoryPage() {
 
                                 {/* BUTTONS */}
                                 <div className="flex w-full flex-row border-t border-gray-100 bg-gray-50 p-3 sm:w-36 sm:flex-col sm:justify-center sm:border-l sm:border-t-0 sm:bg-gray-50/50 gap-2 shrink-0">
-                                    <button className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors shadow-sm">
+                                    <button
+                                        onClick={() => navigate(`/activity/${item.activityId}`)}
+                                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors shadow-sm"
+                                    >
                                         <VisibilityIcon style={{ fontSize: 16 }} />
                                         View
                                     </button>
