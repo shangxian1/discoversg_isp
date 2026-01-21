@@ -14,7 +14,7 @@
     Stack,
   } from "@mui/material";
   import LocationOnIcon from "@mui/icons-material/LocationOn";
-  import { BACKEND_URL } from '../constants';
+  import { BACKEND_URL } from '../../constants';
   
 
   const priceLabel = (price) => {

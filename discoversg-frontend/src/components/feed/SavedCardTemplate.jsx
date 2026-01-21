@@ -6,7 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useState } from 'react';
 import SnackBarDialog from '../layout/SnackBar';
 import { useRef } from 'react';
-import { BACKEND_URL } from '../constants';
+import { BACKEND_URL } from '../../constants';
 
 const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
   const isYoutube = savedMedia.mediaUrl.includes('https://www.youtube.com');
