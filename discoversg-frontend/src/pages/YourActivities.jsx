@@ -81,7 +81,7 @@ export default function HistoryPage() {
 
         try {
             // 1) Try refund first (server enforces policy).
-            const refundRes = await fetch('http://${BACKEND_URL}:3000/api/payments/refund', {
+            const refundRes = await fetch(`${BACKEND_URL}/api/payments/refund`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, bookingId: bookingID }),
@@ -99,7 +99,7 @@ export default function HistoryPage() {
             const proceed = window.confirm(`${refundError}\n\nRemove from history without refund instead?`);
             if (!proceed) return;
 
-            const cancelRes = await fetch('http://${BACKEND_URL}:3000/api/bookings/cancel', {
+            const cancelRes = await fetch(`${BACKEND_URL}/api/bookings/cancel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, bookingId: bookingID }),

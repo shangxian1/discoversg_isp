@@ -50,7 +50,7 @@ const ItineraryPage = () => {
     if (!window.confirm("Are you sure you want to permanently remove this itinerary?")) return;
 
     try {
-      const res = await fetch(`http://${BACKEND_URL}:3000/api/itinerary/${id}`, {
+      const res = await fetch(`${BACKEND_URL}/api/itinerary/${id}`, {
         method: 'DELETE',
       });
 
