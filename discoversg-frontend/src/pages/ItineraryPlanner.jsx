@@ -85,7 +85,7 @@ export default function ItineraryPlanner() {
     };
 
     try {
-      const res = await fetch('http://${BACKEND_URL}:3000/api/ai', {
+      const res = await fetch(`${BACKEND_URL}/api/ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

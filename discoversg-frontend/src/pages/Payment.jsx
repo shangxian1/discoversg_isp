@@ -90,7 +90,7 @@ export default function Payment() {
             }
 
             // 2) Create Stripe checkout session for that booking.
-            const res = await fetch('http://${BACKEND_URL}:3000/api/payments/create-checkout-session', {
+            const res = await fetch(`${BACKEND_URL}/api/payments/create-checkout-session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
