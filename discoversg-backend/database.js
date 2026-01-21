@@ -53,6 +53,8 @@ const dbConfig = {
   connectTimeout: 10000
 };
 
+console.log(dbConfig);
+
 if (!global.db) {
   global.db = mysql.createPool(dbConfig);
 }
