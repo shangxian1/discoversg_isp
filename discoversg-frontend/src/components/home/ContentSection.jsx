@@ -14,6 +14,8 @@
     Stack,
   } from "@mui/material";
   import LocationOnIcon from "@mui/icons-material/LocationOn";
+  import { BACKEND_URL } from '../constants';
+  
 
   const priceLabel = (price) => {
     const n = Number(price);
@@ -149,7 +151,7 @@
       async function load() {
         try {
           setLoading(true);
-          const res = await fetch("http://localhost:3000/api/activities");
+          const res = await fetch(`${BACKEND_URL}/api/activities`);
           if (!res.ok) throw new Error(`API error ${res.status}`);
           const data = await res.json();
           if (alive) setActivities(Array.isArray(data) ? data : []);

@@ -4,6 +4,7 @@ import {
   Box, Typography, Button, Container, Paper, IconButton, TextField
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { BACKEND_URL } from '../constants';
 
 const ActivityDetails = () => {
   const { id } = useParams();
@@ -38,7 +39,7 @@ const ActivityDetails = () => {
 
     // 2. Fetch Fresh Data (in case of direct link or refresh)
     // Make sure your backend route matches this (plural /activities/)
-    fetch(`http://localhost:3000/api/activity/${id}`)
+    fetch(`${BACKEND_URL}/api/activity/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Activity not found");
         return res.json();

@@ -4,6 +4,7 @@ import {
     Paper, TextField, Stack, Divider, Alert 
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { BACKEND_URL } from '../constants';
 
 const ProfilePage = () => {
     const storedUser = JSON.parse(sessionStorage.getItem('user')) || {};
@@ -51,7 +52,7 @@ const ProfilePage = () => {
         };
 
         try {
-            const res = await fetch('http://localhost:3000/api/update-profile', {
+            const res = await fetch(`${BACKEND_URL}/api/update-profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profileBody)

@@ -5,12 +5,13 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
-
+import { BACKEND_URL } from '../constants';
 import LocalVideoTemplate from '../components/feed/LocalVideoTemplate';
 import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
 import SavedCardTemplate from '../components/feed/SavedCardTemplate';
 import SnackBarDialog from '../components/layout/SnackBar';
 import ManageVideoTemplate from '../components/feed/ManageVideoTemplate';
+import { BACKEND_URL } from '../constants';
 
 const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
@@ -58,7 +59,7 @@ const Feed = () => {
       redirect: "follow"
     };
 
-    fetch("http://localhost:3000/api/save-unsave-media", requestOptions)
+    fetch(`${BACKEND_URL}/api/save-unsave-media`, requestOptions)
       .then((response) => response.json())
       .then((result) => {
         snackRef.current.handleState(result.message);
@@ -109,7 +110,7 @@ const Feed = () => {
 
     //Delayed to see loading sign
     await new Promise(resolve => setTimeout(resolve, 2000));
-    const res = await fetch('http://localhost:3000/api/local-videos');
+    const res = await fetch('http://${BACKEND_URL}:3000/api/local-videos');
     const data = await res.json();
     let filteredData = [...data];
     setLocalVideos(data);
@@ -153,8 +154,8 @@ const Feed = () => {
     const fetchSavedData = async () => {
       try {
         const [videosRes, guidesRes] = await Promise.all([
-          fetch(`http://localhost:3000/api/saved-videos/${userData.id}`),
-          fetch(`http://localhost:3000/api/saved-guides/${userData.id}`)
+          fetch(`http://${BACKEND_URL}:3000/api/saved-videos/${userData.id}`),
+          fetch(`http://${BACKEND_URL}:3000/api/saved-guides/${userData.id}`)
         ]);
 
         const videos = await videosRes.json();
@@ -172,13 +173,13 @@ const Feed = () => {
 
   // Retrieve All Planner Guides + Content Creator Analytics
   useEffect(() => {
-    fetch('http://localhost:3000/api/planner-guides')
+    fetch('http://${BACKEND_URL}:3000/api/planner-guides')
       .then(res => res.json())
       .then(data => {
         setPlannerGuides(data);
       });
     if (!userData) return;
-    fetch(`http://localhost:3000/api/analytics/${userData.id}`)
+    fetch(`http://${BACKEND_URL}:3000/api/analytics/${userData.id}`)
       .then(res => res.json())
       .then(data => {
         const videoSaves = data["local-videos"].reduce((sum, item) => sum + (item.noOfSaves || 0), 0);
@@ -196,7 +197,7 @@ const Feed = () => {
       return;
     }
 
-    fetch(`http://localhost:3000/api/local-video/${selectedID}`)
+    fetch(`http://${BACKEND_URL}:3000/api/local-video/${selectedID}`)
       .then(res => res.json())
       .then(data => {
         setLocalVideo(data);

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, CircularProgress, Container, Paper, Typography } from '@mui/material';
-
+import { BACKEND_URL } from '../constants';
 export default function Payment() {
     const navigate = useNavigate();
     const { state } = useLocation();
@@ -54,7 +54,7 @@ export default function Payment() {
         setLoading(true);
         try {
             // 1) Create a pending booking first so we can link it to Stripe.
-            const bookingRes = await fetch('http://localhost:3000/api/bookings/create-for-activity', {
+            const bookingRes = await fetch(`${BACKEND_URL}/api/bookings/create-for-activity`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -76,7 +76,7 @@ export default function Payment() {
 
             // Free activities: confirm booking without Stripe.
             if (isFree) {
-                const confirmRes = await fetch('http://localhost:3000/api/payments/confirm-free', {
+                const confirmRes = await fetch(`${BACKEND_URL}/api/payments/confirm-free`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ bookingId }),
@@ -90,7 +90,7 @@ export default function Payment() {
             }
 
             // 2) Create Stripe checkout session for that booking.
-            const res = await fetch('http://localhost:3000/api/payments/create-checkout-session', {
+            const res = await fetch('http://${BACKEND_URL}:3000/api/payments/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

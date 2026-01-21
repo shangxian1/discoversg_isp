@@ -9,6 +9,7 @@ import {
 // Import your shared components
 import HeroCarousel from '../components/home/HeroCarousel';
 import ContentSection from '../components/home/ContentSection';
+import { BACKEND_URL } from '../constants';
 
 const UserHome = () => {
   // Retrieve the user object from localStorage
@@ -27,7 +28,7 @@ const UserHome = () => {
 
       try {
         // Fetch from your working backend
-        const response = await fetch(`http://localhost:3000/api/recommendations/${userData.id}`);
+        const response = await fetch(`${BACKEND_URL}/api/recommendations/${userData.id}`);
         if (!response.ok) throw new Error('Network response was not ok');
         
         const data = await response.json();

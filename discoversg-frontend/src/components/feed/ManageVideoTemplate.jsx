@@ -122,7 +122,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/edit/local-video', {
+      const response = await fetch(`${BACKEND_URL}/api/edit/local-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

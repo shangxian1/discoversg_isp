@@ -27,7 +27,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import SnackBarDialog from '../components/layout/SnackBar';
 import { useNavigate } from 'react-router-dom';
-
+import { BACKEND_URL } from '../constants';
 // --- Constants & Styles ---
 const BACKGROUND_STRIPE_COLOR = 'rgba(255, 255, 255, 0.7)';
 const LIGHT_RED = '#fce4e4';
@@ -58,7 +58,7 @@ export default function ItineraryPlanner() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/locations');
+        const res = await fetch(`${BACKEND_URL}/api/locations`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         setLocationOptions(data);
@@ -85,7 +85,7 @@ export default function ItineraryPlanner() {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/api/ai', {
+      const res = await fetch('http://${BACKEND_URL}:3000/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

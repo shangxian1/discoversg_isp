@@ -6,6 +6,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PeopleIcon from '@mui/icons-material/People';
 import { CircularProgress } from '@mui/material';
+import { BACKEND_URL } from '../constants';
 
 export default function HistoryPage() {
     const navigate = useNavigate();
@@ -49,7 +50,7 @@ export default function HistoryPage() {
                 setLoading(true);
                 setError('');
 
-                const response = await fetch(`http://localhost:3000/api/bookings/paid/${userId}`);
+                const response = await fetch(`${BACKEND_URL}/api/bookings/paid/${userId}`);
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -80,7 +81,7 @@ export default function HistoryPage() {
 
         try {
             // 1) Try refund first (server enforces policy).
-            const refundRes = await fetch('http://localhost:3000/api/payments/refund', {
+            const refundRes = await fetch('http://${BACKEND_URL}:3000/api/payments/refund', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, bookingId: bookingID }),
@@ -98,7 +99,7 @@ export default function HistoryPage() {
             const proceed = window.confirm(`${refundError}\n\nRemove from history without refund instead?`);
             if (!proceed) return;
 
-            const cancelRes = await fetch('http://localhost:3000/api/bookings/cancel', {
+            const cancelRes = await fetch('http://${BACKEND_URL}:3000/api/bookings/cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, bookingId: bookingID }),

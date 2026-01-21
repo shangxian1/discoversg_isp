@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Paper, Alert, Collapse, Link, emphasize } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { BACKEND_URL } from '../constants';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/signup', {
+      const response = await fetch(`${BACKEND_URL}/api/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),

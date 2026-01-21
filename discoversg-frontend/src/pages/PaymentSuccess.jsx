@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Button, CircularProgress, Container, Paper, Typography } from '@mui/material';
-
+import { BACKEND_URL } from '../constants';
 export default function PaymentSuccess() {
     const navigate = useNavigate();
     const [params] = useSearchParams();
@@ -16,7 +16,7 @@ export default function PaymentSuccess() {
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch('http://localhost:3000/api/payments/confirm', {
+                const res = await fetch(`${BACKEND_URL}/api/payments/confirm`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sessionId }),

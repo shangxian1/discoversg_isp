@@ -6,6 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useState } from 'react';
 import SnackBarDialog from '../layout/SnackBar';
 import { useRef } from 'react';
+import { BACKEND_URL } from '../constants';
 
 const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
   const isYoutube = savedMedia.mediaUrl.includes('https://www.youtube.com');
@@ -26,7 +27,7 @@ const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
   const handleDelete = async (e) => {
     e.preventDefault();
 
-    const response = await fetch(`http://localhost:3000/api/delete/local-video/${savedMedia.savedMediaCode}`, {
+    const response = await fetch(`${BACKEND_URL}/api/delete/local-video/${savedMedia.savedMediaCode}`, {
       method: 'DELETE',
     });
     const data = await response.json();

@@ -5,6 +5,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import ItineraryTimeline from '../components/activity/ItineraryTimeline';
 import { Button } from '@mui/material';
 import { Link } from 'react-router-dom';
+import { BACKEND_URL } from '../constants';
 
 export default function Activities() {
     // 1. Data State
@@ -23,7 +24,7 @@ export default function Activities() {
 
     useEffect(() => {
         // Fetch Activities
-        fetch('http://localhost:3000/api/activities')
+        fetch(`${BACKEND_URL}/api/activities`)
             .then(res => res.json())
             .then(data => {
                 setActivities(data);
@@ -36,7 +37,7 @@ export default function Activities() {
             });
 
         // Fetch Itinerary
-        fetch('http://localhost:3000/api/itinerary')
+        fetch(`${BACKEND_URL}/api/itinerary`)
             .then(res => res.json())
             .then(data => setItinerary(data));
     }, []);

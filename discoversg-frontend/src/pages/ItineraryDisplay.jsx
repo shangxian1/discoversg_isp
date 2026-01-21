@@ -4,7 +4,7 @@ import {
   Box, Grid, Stack, Typography, Button, Alert, CircularProgress
 } from '@mui/material';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-
+import { BACKEND_URL } from '../constants';
 // Icons
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -91,7 +91,7 @@ export default function ItineraryDisplay() {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/api/itinerary', {
+      const res = await fetch(`${BACKEND_URL}/api/itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(savePayload),

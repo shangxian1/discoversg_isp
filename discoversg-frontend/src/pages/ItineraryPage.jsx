@@ -10,6 +10,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import MapIcon from '@mui/icons-material/Map';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SnackBarDialog from '../components/layout/SnackBar';
+import { BACKEND_URL } from '../constants';
 
 const ItineraryPage = () => {
   const [itineraries, setItineraries] = useState([]);
@@ -23,7 +24,7 @@ const ItineraryPage = () => {
     const userID = userData?.userID || userData?.id || 1; 
 
     // Fetch all itineraries for this user
-    fetch(`http://localhost:3000/api/user-itineraries/${userID}`)
+    fetch(`${BACKEND_URL}/api/user-itineraries/${userID}`)
       .then((res) => res.json())
       .then((data) => {
         const parsedItineraries = data.map(item => ({
@@ -49,7 +50,7 @@ const ItineraryPage = () => {
     if (!window.confirm("Are you sure you want to permanently remove this itinerary?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/itinerary/${id}`, {
+      const res = await fetch(`http://${BACKEND_URL}:3000/api/itinerary/${id}`, {
         method: 'DELETE',
       });
 
