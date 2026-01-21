@@ -39,10 +39,10 @@ module.exports = global.db; */
 const mysql = require('mysql2/promise');
 
 const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.db_host,
+  user: process.env.db_user,
+  password: process.env.db_password,
+  database: process.env.db,
   port: 25060,
   waitForConnections: true,
   connectionLimit: 10,
