@@ -29,7 +29,7 @@ router.get("/activities", async (req, res) => {
     `);
 
     const formatted = rows.map((row) => {
-      // ✅ IMPORTANT CHANGE:
+      // IMPORTANT CHANGE:
       // Return ONLY the filename so frontend can use /assets/<filename>
       const imageFilename =
         row.image && row.image !== "_" ? row.image : null;
