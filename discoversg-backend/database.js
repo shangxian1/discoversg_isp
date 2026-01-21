@@ -38,7 +38,7 @@ module.exports = global.db; */
 
 const mysql = require('mysql2/promise');
 
-const pool = mysql.createPool({
+const dbConfig = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -53,4 +53,8 @@ const pool = mysql.createPool({
   connectTimeout: 10000
 });
 
-module.exports = pool;
+if (!global.db) {
+  global.db = mysql.createPool(dbConfig);
+}
+
+module.exports = global.db;
