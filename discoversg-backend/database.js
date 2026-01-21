@@ -38,7 +38,7 @@ module.exports = global.db; */
 
 const mysql = require('mysql2/promise');
 
-const dbConfig = mysql.createPool({
+const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -51,7 +51,7 @@ const dbConfig = mysql.createPool({
     rejectUnauthorized: true
   },
   connectTimeout: 10000
-});
+};
 
 if (!global.db) {
   global.db = mysql.createPool(dbConfig);
