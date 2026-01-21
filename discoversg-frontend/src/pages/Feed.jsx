@@ -11,7 +11,7 @@ import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
 import SavedCardTemplate from '../components/feed/SavedCardTemplate';
 import SnackBarDialog from '../components/layout/SnackBar';
 import ManageVideoTemplate from '../components/feed/ManageVideoTemplate';
-import { BACKEND_URL } from '../constants';
+
 
 const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
