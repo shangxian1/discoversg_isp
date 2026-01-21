@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Paper, Alert, Collapse } from '@mui/material'; // Added Alert and Collapse
 import { useNavigate } from 'react-router-dom';
+import { BACKEND_URL } from '../constants';
 
 const Login = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); 
+  const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); 
+    setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/login', {
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -32,7 +33,7 @@ const Login = () => {
       setError("Could not connect to the server. Please try again later.");
     }
   };
-  
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', bgcolor: '#f5f5f5' }}>
       <Paper elevation={3} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>
@@ -55,7 +56,7 @@ const Login = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            error={Boolean(error)} 
+            error={Boolean(error)}
           />
           <TextField
             label="Password"
@@ -67,12 +68,12 @@ const Login = () => {
             required
             error={Boolean(error)}
           />
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              size="large" 
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
               sx={{ width: 120, backgroundColor: '#196f75', borderRadius: 3, '&:hover': { backgroundColor: '#145a5f' } }}
             >
               Login

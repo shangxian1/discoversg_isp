@@ -19,7 +19,12 @@ const historyRoutes = require('./routes/history_route');
 const bookingRoutes = require('./routes/booking_routes');
 const contactRoutes = require('./routes/contact_routes');
 
-app.use(cors());
+app.use(cors({
+    origin: [
+        'https://discoversg-7nyft.ondigitalocean.app/',
+        'http://localhost:5173'
+    ]
+}));
 app.use(express.json({ limit: '50mb' }));
 
 // Routes

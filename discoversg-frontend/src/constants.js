@@ -1,0 +1,4 @@
+import { VITE_NODE_ENV } from import.meta.env;
+
+export const BACKEND_URL = VITE_NODE_ENV == "production" ? "https://discoversg-7nyft.ondigitalocean.app/discoversg-backend" : "http://localhost:3000";
+export const FRONTEND_URL = VITE_NODE_ENV == "production" ? "https://discoversg-7nyft.ondigitalocean.app/" : "http://localhost:5173";

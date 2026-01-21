@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useState, useRef } from "react";
 import SnackBarDialog from "../layout/SnackBar";
 import { useEffect } from "react";
+import { BACKEND_URL } from "../../constants";
 
 const defaultState = {
   mediaCode: '', title: '', location: '', address: '', description: '',
@@ -81,7 +82,8 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/add/local-video', {
+
+      const response = await fetch(`${BACKEND_URL}/api/add/local-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
