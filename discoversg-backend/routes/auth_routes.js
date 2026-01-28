@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 require('../database');
 
 router.use(cors());
@@ -11,6 +12,8 @@ router.use(express.urlencoded({ extended: true }));
 router.post('/signup', async (req, res) => {
   const { username, password, email } = req.body;
 
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
   if (!username || !password || !email) {
     return res.status(400).json({
       success: false,
@@ -45,7 +48,7 @@ router.post('/signup', async (req, res) => {
     }
     const [result] = await global.db.execute(
       'INSERT INTO user (roleID, userName, userPassword, userEmail, createdAt) VALUES (?, ?, ?, ?, NOW())',
-      [1, username, password, email]
+      [1, username, hashedPassword, email]
     );
 
     res.status(201).json({
@@ -67,13 +70,29 @@ router.post('/signup', async (req, res) => {
 // --- Updated Login Route in routes.js ---
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
+
   try {
+    // 1. Fetch the user by username only
     const [rows] = await global.db.execute(
-      'SELECT userID, userName, profilePicUrl, role.roleName, userEmail, userDescription, CHAR_LENGTH(userPassword) as passLength FROM user JOIN role ON role.roleID = user.roleID WHERE userName = ? AND userPassword = ?',
-      [username, password]
+      `SELECT u.userID, u.userName, u.userPassword, u.profilePicUrl, u.userEmail, u.userDescription, r.roleName 
+       FROM user u 
+       JOIN role r ON r.roleID = u.roleID 
+       WHERE u.userName = ?`,
+      [username]
     );
-    if (rows.length > 0) {
-      const user = rows[0];
+
+    // 2. Check if user exists
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const user = rows[0];
+
+    // 3. Compare the submitted password with the hashed password from the DB
+    const isMatch = await bcrypt.compare(password, user.userPassword);
+
+    if (isMatch) {
+      // 4. Success! Return user data (excluding the password)
       res.status(200).json({
         success: true,
         user: {
@@ -83,15 +102,17 @@ router.post('/login', async (req, res) => {
           email: user.userEmail,
           profilePicUrl: user.profilePicUrl,
           userDescription: user.userDescription,
-          passLength: user.passLength // Return the count of characters
+          passLength: user.userPassword.length // Note: This is the hash length, not the original password length
         }
       });
     } else {
+      // 5. Password does not match
       res.status(401).json({ success: false, message: "Invalid credentials" });
     }
+
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Login Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
