@@ -9,10 +9,14 @@ import {
   Button,
   Chip,
   CardActions,
-  Divider
+  Divider, 
+  IconButton
 } from '@mui/material';
 
-export default function ActivityCard({ activity, featured }) {
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+
+export default function ActivityCard({ activity, featured, showHeart, isFav, onToggleFav }) {
   // 1. Map variables directly from the activity object sent by your backend
   const id = activity?.id;
   const title = activity?.title ?? '';
@@ -58,7 +62,33 @@ export default function ActivityCard({ activity, featured }) {
         boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
       }}
     >
-      <CardMedia component="img" height="160" image={imageUrl} alt={title} sx={{ objectFit: 'cover' }} />
+        {/* ✅ Image + Heart */}
+      <Box sx={{ position: "relative" }}>
+        <CardMedia component="img" height="160" image={imageUrl} alt={title} sx={{ objectFit: "cover" }} />
+
+        {showHeart && (
+          <IconButton
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFav?.(activity);
+            }}
+            sx={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              bgcolor: "rgba(255,255,255,0.9)",
+              "&:hover": { bgcolor: "white" },
+            }}
+          >
+            {isFav ? (
+              <FavoriteIcon sx={{ color: "#d31111" }} />
+            ) : (
+              <FavoriteBorderIcon sx={{ color: "#d31111" }} />
+            )}
+          </IconButton>
+        )}
+      </Box>
 
       <CardContent sx={{ flexGrow: 1, pb: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>

@@ -8,10 +8,13 @@ import { Link } from 'react-router-dom';
 import { BACKEND_URL } from '../constants';
 
 export default function Activities() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const userId = user?.id ?? user?.userID;
     // 1. Data State
     const [activities, setActivities] = useState([]);
     const [itinerary, setItinerary] = useState([]);
-
+    const [favIds, setFavIds] = useState(new Set());
+    
     // 2. Filter States
     const [searchQuery, setSearchQuery] = useState('');
     const [budgetFilter, setBudgetFilter] = useState('All');
@@ -34,6 +37,9 @@ export default function Activities() {
                 const locs = [...new Set(data.map(item => item.location))].filter(Boolean).sort();
                 setUniqueCategories(cats);
                 setUniqueLocations(locs);
+            }).catch((e) => {
+        console.error("Activities fetch failed:", e);
+        setActivities([]);
             });
 
         // Fetch Itinerary
@@ -41,7 +47,85 @@ export default function Activities() {
             .then(res => res.json())
             .then(data => setItinerary(data));
     }, []);
+      // ✅ Load favourite IDs (only when logged in)
+  useEffect(() => {
+    let alive = true;
 
+    async function loadFavIds() {
+      if (!userId) return;
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/favourites/${userId}/ids`);
+        if (!res.ok) throw new Error(`Fav IDs API error ${res.status}`);
+        const ids = await res.json();
+        if (alive) setFavIds(new Set(Array.isArray(ids) ? ids : []));
+      } catch (e) {
+        console.error("Fav IDs fetch failed:", e);
+        if (alive) setFavIds(new Set());
+      }
+    }
+
+    loadFavIds();
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+
+  // ✅ Toggle favourite (optimistic UI)
+  const toggleFav = async (activity) => {
+    if (!userId) {
+      alert("Please log in to add favourites.");
+      return;
+    }
+
+    const activityId = activity?.id ?? activity?.activityID;
+    if (!activityId) return;
+
+    // optimistic update
+    setFavIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(activityId)) next.delete(activityId);
+      else next.add(activityId);
+      return next;
+    });try {
+      const res = await fetch(`${BACKEND_URL}/api/favourites/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // ✅ send BOTH styles so backend won't miss
+        body: JSON.stringify({
+          userId,
+          activityId,
+          userID: userId,
+          activityID: activityId,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Toggle favourite failed: ${res.status}`);
+
+      // If backend returns { favourited: true/false }, sync
+      const data = await res.json().catch(() => null);
+      if (data && typeof data.favourited === "boolean") {
+        setFavIds((prev) => {
+          const next = new Set(prev);
+          if (data.favourited) next.add(activityId);
+          else next.delete(activityId);
+          return next;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+
+      // revert on error
+      setFavIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(activityId)) next.delete(activityId);
+        else next.add(activityId);
+        return next;
+      });
+
+      alert("Failed to update favourites. Check backend console.");
+    }
+  };
     // 4. The Filtering Engine
     const filteredActivities = activities.filter((activity) => {
         // A. Search Logic
@@ -98,7 +182,14 @@ export default function Activities() {
                     <div className="lg:col-span-3 h-fit">
                         <h2 className="text-lg font-semibold mb-3">Featured Section</h2>
                         {activities[0] ? (
-                            <ActivityCard key={activities[0].id} activity={activities[0]} featured />
+                            <ActivityCard 
+                                key={activities[0].id} 
+                                activity={activities[0]} 
+                                featured 
+                                showHeart={true}
+                                isFav={favIds.has(activities[0].id)}
+                                onToggleFav={toggleFav}
+                            />
                         ) : (
                             <div className="p-10 text-center text-gray-500 bg-gray-50 rounded-xl">
                                 No activities found.
@@ -167,7 +258,13 @@ export default function Activities() {
                 {/* --- GRID SECTION: ONLY uses filteredActivities --- */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {filteredActivities.map((activity) => (
-                        <ActivityCard key={activity.id} activity={activity} compact />
+                      <ActivityCard 
+                            key={activity.id} 
+                            activity={activity} 
+                            showHeart={true}
+                            isFav={favIds.has(activity.id)}
+                            onToggleFav={toggleFav}
+                        />
                     ))}
                 </div>
             </div>
