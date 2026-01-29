@@ -1,9 +1,6 @@
 import { Alert, Box, Button, Collapse, MenuItem, Select, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import AddIcon from '@mui/icons-material/Add';
-import { useState, useRef } from "react";
-import SnackBarDialog from "../layout/SnackBar";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BACKEND_URL } from "../../constants";
 
 const defaultState = {
@@ -12,12 +9,13 @@ const defaultState = {
   externalVideoID: '', mediaType: 'tiktok'
 };
 
-const ManageVideoTemplate = ({ video = {}, setScreen }) => {
+const ManageVideoTemplate = ({ video = {}, setScreen, setMessage }) => {
   const [localVideo, setLocalVideo] = useState(defaultState);
   const [isEdit, setIsEdit] = useState(false);
-  const snackRef = useRef();
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = JSON.parse(sessionStorage.getItem('user'));
   const MAX_SIZE_MB = 50; // Around max 1min video
+
+  const [error, setError] = useState('');
 
   useEffect(() => {
     // If video is passed in
@@ -40,8 +38,6 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
       setLocalVideo(defaultState);
     }
   }, [video]);
-
-  const [error, setError] = useState('');
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -71,6 +67,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
   const handleTypeChange = (e) => {
     setLocalVideo(prev => ({ ...prev, mediaType: e.target.value }))
   }
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -82,7 +79,6 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
     }
 
     try {
-
       const response = await fetch(`${BACKEND_URL}/api/add/local-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,8 +99,10 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        snackRef.current.handleState(data.message);
+        setMessage(data.message);
         setScreen('yourFeeds');
+      } else {
+        setMessage(data.message);
       }
     } catch (err) {
       console.log("Upload error:", err);
@@ -117,8 +115,11 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
     setError('');
 
     if (localVideo.externalVideoID == "" && localVideo.ownVideoUrl == "") {
-      setError("Please upload/insert a video");
-      return;
+      if (!video.ownVideoUrl) {
+        setError("Please upload/insert a video");
+        console.log(error);
+        return;
+      }
     }
 
     try {
@@ -132,7 +133,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
           address: localVideo.location,
           fullAddress: localVideo.address,
           noOfLikes: localVideo.likes,
-          ownVideoUrl: localVideo.ownVideoUrl,
+          ownVideoUrl: localVideo.ownVideoUrl || video.ownVideoUrl,
           externalVideoID: localVideo.externalVideoID,
           datePosted: localVideo.date,
           mediaType: localVideo.mediaType,
@@ -142,7 +143,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        snackRef.current.handleState(data.message);
+        setMessage(data.message);
         setScreen('yourFeeds');
       }
     } catch (err) {
@@ -194,7 +195,7 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
         onChange={handleFileChange}
       />
 
-      {!localVideo.ownVideoUrl ? (
+      {!localVideo.ownVideoUrl && !video.ownVideoUrl ? (
         <div className="flex w-full h-auto gap-2">
           <div className="w-1/2 mr-5">
             <p className="text-2xl mb-2">Insert Video</p>
@@ -233,16 +234,25 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
         <div className="mt-5">
           <p className="text-2xl mb-2">Added video: {localVideo.videoName}</p>
           <video
-            src={localVideo.ownVideoUrl}
+            src={localVideo.ownVideoUrl || video.ownVideoUrl}
             controls
-            className="w-fit!"
+            className="block mx-auto"
           />
-          <label
-            htmlFor="video-upload"
-            className="mt-4 cursor-pointer bg-[#196f75] hover:bg-[#145a5f] text-white text-lg p-2 rounded-md inline-block transition"
-          >
-            Replace Video
-          </label>
+          <input
+            type="file"
+            id="video-upload-again"
+            accept="video/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <div className="flex justify-center w-full">
+            <label
+              htmlFor="video-upload-again"
+              className="mt-4 mb-4 cursor-pointer bg-[#196f75] hover:bg-[#145a5f] text-white text-lg p-2 rounded-md transition"
+            >
+              Reupload Video
+            </label>
+          </div>
         </div>
       )}
     </div>
@@ -261,7 +271,6 @@ const ManageVideoTemplate = ({ video = {}, setScreen }) => {
         {isEdit ? 'Edit' : 'Publish'}
       </Button>
     </Box>
-    <SnackBarDialog ref={snackRef}></SnackBarDialog>
   </form >
 }
 

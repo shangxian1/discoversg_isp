@@ -83,7 +83,7 @@ async function main(place, noOfDays, includeDining) {
   try {
     // 1. Create a much stricter instruction for the dining preference
     const diningInstruction = includeDining 
-        ? `Each activity MUST include a "dining_option" object with a specific local restaurant or cafe suggestion nearby.`
+        ? `Do not give "dining_option" object for attractions and sightseeing.`
         : `CRITICAL: Do NOT suggest any dining or food options. The "dining_option" field for every activity MUST be strictly null. Focus only on attractions and sightseeing.`;
 
     const prompt = `

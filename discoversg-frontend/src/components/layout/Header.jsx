@@ -39,7 +39,7 @@ const Navbar = () => {
     const navItems = [
         { name: 'Activities', path: '/activities' },
         { name: 'Feed', path: '/feed' },
-        { name: 'Planner', path: '/planner' }
+        { name: 'Planner', path: sessionStorage.getItem('itineraryResponse') ? '/planner-result' : 'planner' }
     ];
 
     if (userData) {

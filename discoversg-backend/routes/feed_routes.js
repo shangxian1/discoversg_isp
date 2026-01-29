@@ -9,10 +9,11 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
 //Retrieve all videos (for all users)
-router.get('/local-videos', async (req, res) => {
+router.get('/local-videos{/:userID}', async (req, res) => {
+  const { userID } = req.params;
   try {
     const [rows] = await pool.execute('SELECT * FROM post JOIN user ON post.userID = user.userID JOIN role ON role.roleID = user.roleID');
-    const [savedMediaID] = await pool.execute('SELECT mediaID FROM savedmedia');
+    const [savedMediaID] = await pool.execute('SELECT mediaID FROM savedmedia WHERE userID = ?', [userID]);
     const result = savedMediaID.map(item => item.mediaID);
 
     const formattedRows = rows.map(row => ({
@@ -41,10 +42,11 @@ router.get('/local-videos', async (req, res) => {
 })
 
 //Retrieve all planner guides (for all users)
-router.get('/planner-guides', async (req, res) => {
+router.get('/planner-guides{/:userID}', async (req, res) => {
+  const { userID } = req.params;
   try {
     const [rows] = await pool.execute('SELECT * FROM guide JOIN user ON guide.userID = user.userID');
-    const [savedMediaID] = await pool.execute('SELECT mediaID FROM savedmedia');
+    const [savedMediaID] = await pool.execute('SELECT mediaID FROM savedmedia WHERE userID = ?', [userID]);
     const result = savedMediaID.map(item => item.mediaID);
     const formattedRows = rows.map(row => ({
       guideID: row.guideID,
@@ -205,9 +207,11 @@ router.get('/local-video/:mediaCode', async (req, res) => {
     const [result] = await pool.execute('SELECT * FROM post WHERE postCode = ?', [mediaCode]);
     if (result.length == 1) {
       const selectedVideo = result[0];
-      const mediaID = retrieveMediaID(selectedVideo.mediaUrl);
-      const date = new Date(selectedVideo.datePosted).toISOString().split('T')[0];
       const isYoutube = selectedVideo.mediaUrl.includes('https://www.youtube.com');
+      const isTiktok = selectedVideo.mediaUrl.includes('https://www.tiktok.com');
+      const mediaID = isTiktok || isYoutube ? retrieveMediaID(selectedVideo.mediaUrl) : null;
+      const mediaUrl = !isTiktok && !isYoutube ? selectedVideo.mediaUrl : null;
+      const date = new Date(selectedVideo.datePosted).toISOString().split('T')[0];
       res.status(200).json({
         mediaCode: selectedVideo.postCode,
         title: selectedVideo.title,
@@ -217,6 +221,7 @@ router.get('/local-video/:mediaCode', async (req, res) => {
         likes: selectedVideo.noOfLikes,
         date: date,
         videoID: mediaID,
+        ownVideoUrl: mediaUrl,
         mediaType: isYoutube ? 'youtube' : 'tiktok'
       })
     } else {
@@ -228,43 +233,101 @@ router.get('/local-video/:mediaCode', async (req, res) => {
   }
 })
 
+// Retrieve planner guide based on media code (For edit media)
+router.get('/planner-guide/:mediaCode', async (req, res) => {
+  const { mediaCode } = req.params;
+
+  try {
+    const [result] = await pool.execute('SELECT * FROM guide WHERE guideCode = ?', [mediaCode]);
+    if (result.length == 1) {
+      const selectedGuide = result[0];
+      const date = new Date(selectedGuide.datePosted).toISOString().split('T')[0];
+      res.status(200).json({
+        mediaCode: selectedGuide.guideCode,
+        title: selectedGuide.title,
+        description: selectedGuide.description,
+        date: date,
+        imageUrl: selectedGuide.imageUrl,
+        mediaUrl: selectedGuide.mediaUrl,
+      })
+    } else {
+      res.status(404).json({ message: `No guides found under media code ${mediaCode}` });
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
 // Add local video
 router.post('/add/local-video', async (req, res) => {
-  console.log('test');
   const { title, description, address, fullAddress, noOfLikes, ownVideoUrl, externalVideoID, mediaType, datePosted, userID } = req.body;
-  const [result] = await pool.execute('SELECT postCode FROM post ORDER BY postID DESC LIMIT 1');
-  if (result.length == 1) {
-    const lastVideoCode = result[0].postCode;
-    const newViewCode = incrementMediaCode(lastVideoCode);
+  try {
+    const [result] = await pool.execute('SELECT postCode FROM post ORDER BY postID DESC LIMIT 1');
+    if (result.length == 1) {
+      const lastVideoCode = result[0].postCode;
+      const newViewCode = incrementMediaCode(lastVideoCode);
 
-    if (ownVideoUrl) {
-      const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, ownVideoUrl, datePosted]);
-      if (result.affectedRows > 0) {
-        res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
+      if (ownVideoUrl) {
+        const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, ownVideoUrl, datePosted]);
+        if (result.affectedRows > 0) {
+          res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
+        }
       }
-    }
 
-    else if (externalVideoID) {
-      const [checkMedia] = await pool.execute('SELECT mediaUrl FROM post');
-      const exists = checkMedia.some(media => retrieveMediaID(media.mediaUrl) === externalVideoID);
-      if (exists) {
-        res.status(404).json({ success: false, message: 'Video already exists, upload a different video' })
-      } else {
-        if (mediaType == 'tiktok') {
-          const tikTokUrl = `https://www.tiktok.com/embed/v2/${externalVideoID}`;
-          const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, tikTokUrl, datePosted]);
-          if (result.affectedRows > 0) {
-            res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
-          }
+      else if (externalVideoID) {
+        const [checkMedia] = await pool.execute('SELECT mediaUrl FROM post');
+        const exists = checkMedia.some(media => retrieveMediaID(media.mediaUrl) === externalVideoID);
+        if (exists) {
+          res.status(404).json({ success: false, message: 'Video already exists, upload a different video' })
         } else {
-          const youtubeUrl = `https://www.youtube.com/embed/${externalVideoID}`;
-          const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, youtubeUrl, datePosted]);
-          if (result.affectedRows > 0) {
-            res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
+          if (mediaType == 'tiktok') {
+            const tikTokUrl = `https://www.tiktok.com/embed/v2/${externalVideoID}`;
+            const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, tikTokUrl, datePosted]);
+            if (result.affectedRows > 0) {
+              res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
+            }
+          } else {
+            const youtubeUrl = `https://www.youtube.com/embed/${externalVideoID}`;
+            const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, youtubeUrl, datePosted]);
+            if (result.affectedRows > 0) {
+              res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
+            } else {
+              res.status(500).json({ error: 'Internal Server Error, unable to add local video' });
+            }
           }
         }
       }
+    } else {
+      res.status(500).json({ error: 'Internal Server Error' });
     }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Add travel guide
+router.post('/add/travel-guide', async (req, res) => {
+  const { title, description, imageUrl, mediaUrl, datePosted, userID } = req.body;
+  try {
+    const [rows] = await pool.execute('SELECT guideCode FROM guide ORDER BY guideID DESC LIMIT 1');
+    if (rows.length == 1) {
+      const lastGuideCode = rows[0].guideCode;
+      const newViewCode = incrementMediaCode(lastGuideCode);
+
+      const [result] = await pool.execute('INSERT INTO guide(guideCode, userID, title, description, imageUrl, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, imageUrl, mediaUrl, datePosted]);
+      if (result.affectedRows > 0) {
+        res.status(200).json({ success: true, message: 'Travel Guide Uploaded Successfully!' });
+      } else {
+        res.status(500).json({ message: 'Internal Server Error, unable to add guide.' });
+      }
+    } else {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal Server Error' })
   }
 });
 
@@ -302,14 +365,42 @@ router.post('/edit/local-video', async (req, res) => {
   }
 })
 
+// Edit travel guide
+router.post('/edit/travel-guide', async (req, res) => {
+  const { guideCode, title, description, imageUrl, mediaUrl, datePosted } = req.body;
+  try {
+    const [result] = await pool.execute('UPDATE guide SET title = ?, description = ?, imageUrl = ?, mediaUrl = ?, datePosted = ?, updatedAt = NOW() WHERE guideCode = ?', [title, description, imageUrl, mediaUrl, datePosted, guideCode]);
+    if (result.affectedRows > 0) {
+      res.status(200).json({ success: true, message: `Travel Guide (ID: ${guideCode}) has been edited successfully!` });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error, unable to edit guide.' });
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
 // Delete local video based on code
 router.delete('/delete/local-video/:mediaCode', async (req, res) => {
   const { mediaCode } = req.params;
 
   try {
-    const [result] = await pool.execute('DELETE FROM post WHERE postCode = ?', [mediaCode]);
-    
+    await pool.execute('DELETE FROM post WHERE postCode = ?', [mediaCode]);
     res.status(200).json({ message: `Local Video (ID: ${mediaCode}) deleted successfully` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+})
+
+// Delete travel guide based on code
+router.delete('/delete/travel-guide/:mediaCode', async (req, res) => {
+  const { mediaCode } = req.params;
+
+  try {
+    await pool.execute('DELETE FROM guide WHERE guideCode = ?', [mediaCode]);
+    res.status(200).json({ message: `Travel Guide (ID: ${mediaCode}) deleted successfully` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server Error' });
