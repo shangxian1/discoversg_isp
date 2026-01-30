@@ -71,7 +71,7 @@ router.get('/activity/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid activity id' });
     }
 
-   const [rows] = await db.execute(
+    const [rows] = await db.execute(
       `SELECT 
         a.activityID,
         a.activityName,
@@ -110,5 +110,58 @@ router.get('/activity/:id', async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+// Retrieve activity where it has the most amount of bookings
+// Referencing to activitysession & booking tables
+router.get('/featured-activity', async (req, res) => {
+  try {
+    const [rows] = await db.execute(`SELECT * FROM booking WHERE status = 'PAID' AND sessionID = (SELECT sessionID FROM booking GROUP BY sessionID ORDER BY COUNT(*) DESC LIMIT 1)`);
+    if (rows.length > 0) {
+      const [result] = await db.execute(`SELECT activityID FROM activitysession WHERE sessionID = ?`, [rows[0].sessionID]);
+      if (result) {
+        const [featuredActivity] = await db.execute(`SELECT
+          a.activityID AS id,
+          a.activityName AS title,
+          c.categoryName AS category,
+          a.location AS location,
+          a.summary AS summary,
+          a.description AS description,
+          a.address AS address,
+          a.price AS price,
+          a.activityPicUrl AS image
+        FROM activity a
+        LEFT JOIN category c ON a.categoryID = c.categoryID
+        WHERE a.activityID = ?
+        ORDER BY a.activityID ASC`, [result[0].activityID]);
+
+        if (featuredActivity) {
+          const row = featuredActivity[0];
+          const imageFilename = row.image && row.image !== "_" ? row.image : null;
+          const formatted = {
+            id: row.id,
+            title: row.title,
+            category: row.category ?? "General",
+            location: row.location ?? "",
+            summary: row.summary ?? "",
+            description: row.description ?? "",
+            address: row.address ?? "",
+            price: row.price,
+            image: imageFilename,
+          };
+          return res.status(200).json(formatted);
+        } else {
+          return res.status(404).json({ error: 'Popular Activity not found' });
+        }
+      } else {
+        return res.status(500).json({ error: 'Internal Server Error' })
+      }
+    } else {
+      return res.status(500).json({ error: 'Internal Server Error' })
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
 
 module.exports = router;

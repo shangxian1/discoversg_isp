@@ -73,7 +73,6 @@ export default function App() {
             <Route path="/itinerary" element={<ItineraryPage />} />
             <Route path="/planner-result" element={<ItineraryDisplay />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/activity/:id" element={<ActivityDetails />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
@@ -83,6 +82,7 @@ export default function App() {
           <Route path="/planner" element={<TripPlanner />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/activities" element={<Activities />} />
+          <Route path="/activity/:id" element={<ActivityDetails />} />
           <Route path="/contact" element={<Contact />} />
         </Route>
       </Routes>
