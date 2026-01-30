@@ -28,6 +28,7 @@ import YourActivities from './pages/YourActivities'
 import Contact from './pages/Contact';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 import ItineraryDisplay from './pages/ItineraryDisplay';
+import Favourites from './pages/favouritesPage';
 
 const HomeContent = () => (
   <>
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/activities" element={<Activities />} />
           <Route path="/activity/:id" element={<ActivityDetails />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/favourites" element={<Favourites  />}/>
         </Route>
       </Routes>
     </ThemeProvider>

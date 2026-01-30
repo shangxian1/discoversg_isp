@@ -44,6 +44,8 @@ const Navbar = () => {
 
     if (userData) {
         navItems.push({ name: 'Itinerary', path: '/itinerary' });
+        navItems.push({ name: 'Favourites', path: '/favourites' });
+
     }
 
     return (

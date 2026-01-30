@@ -15,6 +15,9 @@
   } from "@mui/material";
   import LocationOnIcon from "@mui/icons-material/LocationOn";
   import { BACKEND_URL } from '../../constants';
+  import IconButton from "@mui/material/IconButton";
+  import FavoriteIcon from "@mui/icons-material/Favorite";
+  import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
   
 
   const priceLabel = (price) => {
@@ -23,7 +26,7 @@
     return `$${n.toFixed(2)}`;
   };
 
-  function GemCard({ item }) {
+  function GemCard({ item ,isFav, onToggleFav, showHeart}) {
     const navigate = useNavigate();
 
     const handleNavigate = () => {
@@ -70,8 +73,31 @@
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           transition: "transform .15s ease, box-shadow .15s ease",
           "&:hover": { transform: "translateY(-2px)", boxShadow: 6 },
+          position : "relative",
         }}
-      >
+      >{showHeart && (
+        <IconButton
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleFav?.(item);
+          }}
+          sx={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            zIndex: 10, // Ensure it sits on top of the ActionArea
+            bgcolor: "rgba(255,255,255,0.9)",
+            "&:hover": { bgcolor: "white" },
+          }}
+        >
+          {isFav ? (
+            <FavoriteIcon sx={{ color: "#d31111" }} />
+          ) : (
+            <FavoriteBorderIcon sx={{ color: "#d31111" }} />
+          )}
+        </IconButton>
+      )}
         <CardActionArea
           onClick={handleNavigate}
           sx={{
@@ -142,6 +168,9 @@
   }
 
   export default function ContentSection({ items, title }) {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const userId = user?.id ?? user?.userID;
+    const [favIds, setFavIds] = useState(new Set());
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -164,11 +193,69 @@
       }
 
       load();
-      return () => {
-        alive = false;
-      };
-    }, []);
+      return () => {alive : false; };},[]);
+      useEffect(() => {
+    let alive = true;
 
+    async function loadFavIds() {
+      if (!userId) return;
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/favourites/${userId}/ids`);
+        if (!res.ok) throw new Error(`Fav IDs API error ${res.status}`);
+        const ids = await res.json();
+        if (alive) setFavIds(new Set(Array.isArray(ids) ? ids : []));
+      } catch (e) {
+        console.error("Fav IDs fetch failed:", e);
+        if (alive) setFavIds(new Set());
+      }
+    }
+
+    loadFavIds();
+    return () => { alive = false; };
+  }, [userId]);
+  const toggleFav = async (activity) => {
+    if (!userId) {
+      alert("Please log in to add favourites.");
+      return;
+    }
+    
+    const activityId = activity?.id || activity?.activityID;
+    if (!activityId) return;
+
+    // Optimistic update (updates UI immediately)
+    setFavIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(activityId)) next.delete(activityId);
+      else next.add(activityId);
+      return next;
+    });
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/favourites/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          activityId,
+          userID: userId,
+          activityID: activityId,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Toggle favourite failed: ${res.status}`);
+    } catch (e) {
+      console.error(e);
+      // Revert if API fails
+      setFavIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(activityId)) next.delete(activityId);
+        else next.add(activityId);
+        return next;
+      });
+      alert("Failed to update favourites.");
+    }
+  };
     const offers = useMemo(
       () => activities.filter((a) => Number(a.price) === 0 || Number(a.price) <= 15).slice(0, 4),
       [activities]
@@ -190,7 +277,11 @@
             <Grid container spacing={3}>
               {items.map((item) => (
                 <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
-                  <GemCard item={item} />
+                 <GemCard item={item}
+                  isFav={favIds.has(item.id || item.activityID)}
+                  onToggleFav={toggleFav}
+                  showHeart={Boolean(userId)}
+                   />
                 </Grid>
               ))}
             </Grid>
@@ -210,7 +301,11 @@
           <Grid container spacing={3} sx={{ mb: 5 }}>
             {offers.map((item) => (
               <Grid key={item.id || item.activityID} item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
-                <GemCard item={item} />
+               <GemCard item={item}
+                  isFav={favIds.has(item.id || item.activityID)}
+                  onToggleFav={toggleFav}
+                  showHeart={Boolean(userId)}
+                   />
               </Grid>
             ))}
           </Grid>
