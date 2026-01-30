@@ -3,6 +3,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 
 const PlannerGuideTemplate = ({ guide, onSave }) => {
+  const imageSource = guide.imageUrl.startsWith('data:image');
   return (
     <Grid key={guide.guideID} size={{ xs: 12, sm: 6 }}>
       <Card sx={{ width: '100%', padding: '1rem' }}>
@@ -14,7 +15,7 @@ const PlannerGuideTemplate = ({ guide, onSave }) => {
         >
           <CardMedia
             component="img"
-            src={guide.imageUrl ? `/assets/${guide.imageUrl}` : null}
+            src={!imageSource ? `/assets/${guide.imageUrl}` : `${guide.imageUrl}`}
             sx={{
               height: '400px',
               objectFit: 'contain',

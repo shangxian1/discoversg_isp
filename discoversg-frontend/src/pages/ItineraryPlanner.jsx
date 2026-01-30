@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -7,32 +7,20 @@ import {
   Container,
   Grid,
   Paper,
-  IconButton,
   Stack,
   CircularProgress,
-  Snackbar,
-  Alert,
   Autocomplete,
   Checkbox,
   FormControlLabel
 } from '@mui/material';
-
-// Icons
-import SearchIcon from '@mui/icons-material/Search';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import SaveIcon from '@mui/icons-material/Save';
-import RefreshIcon from '@mui/icons-material/Refresh';
-
-// Google Maps Components
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import SnackBarDialog from '../components/layout/SnackBar';
 import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL } from '../constants';
+
 // --- Constants & Styles ---
 const BACKGROUND_STRIPE_COLOR = 'rgba(255, 255, 255, 0.7)';
 const LIGHT_RED = '#fce4e4';
 const PRIMARY_RED = '#d32f2f';
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const backgroundStyles = {
   backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 10px, ${BACKGROUND_STRIPE_COLOR} 10px, ${BACKGROUND_STRIPE_COLOR} 20px)`,

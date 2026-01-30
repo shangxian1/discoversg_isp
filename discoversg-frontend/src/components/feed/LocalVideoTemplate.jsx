@@ -2,6 +2,8 @@ import { Grid, Avatar, Button, Card, CardHeader, CardContent, CardActions, CardM
 import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const LocalVideoTemplate = ({ localVideo, onSave }) => {
+  const isYoutube = localVideo.mediaUrl.includes('https://www.youtube.com');
+  const isTiktok = localVideo.mediaUrl.includes('https://www.tiktok.com');
   return <>
     <Grid container spacing={3} sx={{ marginTop: '1.5rem' }}>
       {/* Main template for Youtube videos */}
@@ -14,14 +16,23 @@ const LocalVideoTemplate = ({ localVideo, onSave }) => {
           title={localVideo.user.userName}
           subheader={localVideo.user.role}
         />
-        <CardMedia
-          component="iframe"
-          height="700"
-          src={localVideo.mediaUrl}
-          title="YouTube Video Player"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
-          allowFullScreen
-        />
+        {isYoutube || isTiktok ? (
+          <CardMedia
+            component="iframe"
+            height="700"
+            src={localVideo.mediaUrl}
+            title="YouTube Video Player"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
+            allowFullScreen
+          />
+        ) : (
+          <video
+            src={localVideo.mediaUrl}
+            controls
+            className="block mx-auto"
+          />
+        )}
+
 
         <CardContent sx={{ paddingBottom: 0 }}>
           <IconButton aria-label="add to favorites" sx={{ paddingRight: '0.25rem', paddingLeft: 0 }}>

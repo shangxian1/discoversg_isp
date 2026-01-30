@@ -1,24 +1,22 @@
-import { Grid, Button, Card, CardMedia, CardContent, IconButton, CardActions, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Collapse, Alert } from '@mui/material';
+import { Grid, Button, Card, CardMedia, CardContent, CardActions, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Collapse, Alert } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import { useState } from 'react';
-import SnackBarDialog from '../layout/SnackBar';
-import { useRef } from 'react';
 import { BACKEND_URL } from '../../constants';
 
-const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
+const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, setMessage, onSelect }) => {
+  const isTravelGuide = savedMedia.savedMediaCode.startsWith('G');
   const isYoutube = savedMedia.mediaUrl.includes('https://www.youtube.com');
   const isTiktok = savedMedia.mediaUrl.includes('https://www.tiktok.com');
   const regex = /embed\/([a-zA-Z0-9_-]{11})/;
   const match = savedMedia.mediaUrl.match(regex);
   const [open, setOpen] = useState(false);
-  const snackRef = useRef();
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-
+  
   const editFunction = () => {
     setScreen('manageFeeds');
     onSelect(savedMedia.savedMediaCode);
@@ -27,20 +25,15 @@ const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
   const handleDelete = async (e) => {
     e.preventDefault();
 
-    const response = await fetch(`${BACKEND_URL}/api/delete/local-video/${savedMedia.savedMediaCode}`, {
+    const response = await fetch(`${BACKEND_URL}/api/delete/${!isTravelGuide ? 'local-video' : 'travel-guide'}/${savedMedia.savedMediaCode}`, {
       method: 'DELETE',
     });
     const data = await response.json();
-
     if (response.ok) {
       handleClose();
-      snackRef.current.handleState(data.message);
-    }
-    try {
-
-    } catch (e) {
-      console.log("Upload error:", err);
-      snackRef.current.handleState("Unable to delete, something went wrong");
+      setMessage(data.message);
+    } else {
+      setMessage("Something went wrong. Please try again later");
     }
   }
   return (
@@ -51,7 +44,7 @@ const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
             <CardMedia
               component="img"
               // Placeholder image in case image not found / doesn't work
-              src={isYoutube && match ? `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg` : isTiktok ? `/assets/tiktok_thumbnail.jpg` : `/assets/${savedMedia.imageUrl}`}
+              src={isYoutube && match ? `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg` : isTiktok ? `/assets/tiktok_thumbnail.jpg` : `${savedMedia.imageUrl}`}
               title={savedMedia.title}
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
               allowFullScreen
@@ -136,7 +129,6 @@ const SavedCardTemplate = ({ savedMedia, onUnsave, setScreen, onSelect }) => {
           </DialogActions>
         </Dialog>
       </Card>
-      <SnackBarDialog ref={snackRef}></SnackBarDialog>
     </>
   );
 }

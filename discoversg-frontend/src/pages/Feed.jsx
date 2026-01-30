@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Grid, Avatar, Stack, Box, CircularProgress, Button, Card, CardHeader, CardContent, CardActions, CardMedia, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel, Snackbar, Fade, Typography, Fab } from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import { Grid, Avatar, Stack, Box, CircularProgress, Button, Container, Paper, InputBase, IconButton, Checkbox, FormGroup, FormControlLabel, Typography } from '@mui/material';
 import { ToggleFeedButton, ToggleCategoryButton } from '../components/feed/Buttons';
 import { Search as SearchIcon } from '@mui/icons-material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
 import { BACKEND_URL } from '../constants';
+
+//Components & Templates
 import LocalVideoTemplate from '../components/feed/LocalVideoTemplate';
 import PlannerGuideTemplate from '../components/feed/PlannerGuideTemplate';
 import SavedCardTemplate from '../components/feed/SavedCardTemplate';
 import SnackBarDialog from '../components/layout/SnackBar';
 import ManageVideoTemplate from '../components/feed/ManageVideoTemplate';
-
+import ManageGuideTemplate from '../components/feed/ManageGuideTemplate';
 
 const Feed = () => {
   const [localVideos, setLocalVideos] = useState([]);
@@ -20,10 +22,13 @@ const Feed = () => {
   const [savedPlannerGuides, setSavedPlannerGuides] = useState([]);
   const [creatorMedia, setCreatorMedia] = useState([]);
   const [totalSaves, setTotalSaves] = useState(0);
+  const [childData, setChildData] = useState(null);
 
   // For editing media
-  const [selectedID, setSelectedID] = useState(null);
+  const [selectedVideoID, setSelectedVideoID] = useState(null);
+  const [selectedMediaID, setSelectedMediaID] = useState(null);
   const [localVideo, setLocalVideo] = useState({});
+  const [plannerGuide, setPlannerGuide] = useState({});
 
   const userData = JSON.parse(sessionStorage.getItem('user'));
   const { ref, inView } = useInView();
@@ -72,10 +77,17 @@ const Feed = () => {
 
   // When the add button is clicked, reset and clear form
   const addFunction = () => {
-    setSelectedID(null);
+    setSelectedVideoID(null);
+    setSelectedMediaID(null);
     setLocalVideo({});
+    setPlannerGuide({});
     setActiveScreen('manageFeeds');
   };
+
+  const handleDataFromComponent = (data) => {
+    setChildData(data);
+    snackRef.current.handleState(data);
+  }
 
   // This calculates the filtered list
   const getFilteredItems = (items) => {
@@ -110,7 +122,7 @@ const Feed = () => {
 
     //Delayed to see loading sign
     await new Promise(resolve => setTimeout(resolve, 2000));
-    const res = await fetch(`${BACKEND_URL}/api/local-videos`);
+    const res = userData ? await fetch(`${BACKEND_URL}/api/local-videos/${userData.id}`) : await fetch(`${BACKEND_URL}/api/local-videos/null`);
     const data = await res.json();
     let filteredData = [...data];
     setLocalVideos(data);
@@ -137,7 +149,7 @@ const Feed = () => {
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status } =
     useInfiniteQuery({
       //Refresh when variables below changed
-      queryKey: ['videos', { isRecent: isRecentChecked, isLikes: isLikesChecked, search: searchQuery, localVideos }],
+      queryKey: ['videos', { isRecent: isRecentChecked, isLikes: isLikesChecked, search: searchQuery, savedVideos: savedLocalVideos }],
       queryFn: fetchLocalVideos,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
@@ -160,7 +172,6 @@ const Feed = () => {
 
         const videos = await videosRes.json();
         const guides = await guidesRes.json();
-        console.log(videos);
         setSavedLocalVideos(videos);
         setSavedPlannerGuides(guides);
       } catch (error) {
@@ -171,14 +182,24 @@ const Feed = () => {
     fetchSavedData();
   }, [activeScreen]);
 
-  // Retrieve All Planner Guides + Content Creator Analytics
+  // Retrieve All Planner Guides
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/planner-guides`)
-      .then(res => res.json())
-      .then(data => {
+    const userId = userData?.id || 'null';
+    const url = `${BACKEND_URL}/api/planner-guides/${userId}`;
+
+    fetch(url)
+      .then((res) => {
+        return res.json();
+      })
+      .then((data) => {
         setPlannerGuides(data);
-      });
-    if (!userData) return;
+      })
+      .catch((err) => console.error("Fetch error:", err));
+  }, [childData]);
+
+  // Retrieve Content Creator Analytics + Content Creator Media
+  useEffect(() => {
+    if (!userData || userData.role !== 'Content Creator') return;
     fetch(`${BACKEND_URL}/api/analytics/${userData.id}`)
       .then(res => res.json())
       .then(data => {
@@ -188,22 +209,38 @@ const Feed = () => {
         setCreatorMedia(data);
         setTotalSaves(totalSaves);
       });
-  }, [activeScreen]);
+  }, [childData]);
 
-  // Retrieve media based on clicking on "Edit" button
+  // Retrieve local video based on clicking on "Edit" button
   useEffect(() => {
-    if (!selectedID) {
-      setLocalVideo({}); // Clear data if no ID is selected
+    if (!selectedVideoID) {
+      setLocalVideo({});
       return;
     }
 
-    fetch(`${BACKEND_URL}/api/local-video/${selectedID}`)
+    fetch(`${BACKEND_URL}/api/local-video/${selectedVideoID}`)
       .then(res => res.json())
       .then(data => {
         setLocalVideo(data);
       })
-      .catch(err => console.error("Error fetching video:", err));
-  }, [activeScreen, selectedID]);
+      .catch(err => console.error("Error fetching video:", err.message));
+
+
+  }, [activeScreen, selectedVideoID]);
+
+  // Retrieve planner guide based on clicking on "Edit" button
+  useEffect(() => {
+    if (!selectedMediaID) {
+      setPlannerGuide({});
+      return;
+    }
+    fetch(`${BACKEND_URL}/api/planner-guide/${selectedMediaID}`)
+      .then(res => res.json())
+      .then(data => {
+        setPlannerGuide(data);
+      })
+      .catch(err => console.error("Error fetching video:", err.message));
+  }, [activeScreen, selectedMediaID])
 
   //Detection when the viewport has reached to the end of the page
   useEffect(() => {
@@ -350,7 +387,7 @@ const Feed = () => {
 
         {/* Content Creator View (Analytics) */}
         {activeScreen == 'yourFeeds' && <>
-          <Grid container spacing={5}>
+          <Grid container spacing={5} sx={{ marginBottom: '2rem' }}>
             <Grid size={6}>
               <Typography align="center" className="bg-[#C21010] h-fit content-center rounded-2xl py-3 text-white">
                 <p className="text-5xl">{creatorMedia.totalLikes}</p>
@@ -366,16 +403,22 @@ const Feed = () => {
             </Grid>
           </Grid>
           {activeCategory == 'localVideos' && (
-            Array.isArray(creatorMedia['local-videos']) ? creatorMedia['local-videos'].map((media) => <SavedCardTemplate savedMedia={media} key={media.postID} setScreen={setActiveScreen} onSelect={(id) => setSelectedID(id)}></SavedCardTemplate>) : creatorMedia['local-videos'].message
+            Array.isArray(creatorMedia['local-videos']) ? creatorMedia['local-videos'].map((media) => <SavedCardTemplate savedMedia={media} key={media.postID} setScreen={setActiveScreen} setMessage={handleDataFromComponent} onSelect={(id) => setSelectedVideoID(id)}></SavedCardTemplate>) : 'No local videos, add a new local video now!'
+          )}
+          {activeCategory == 'plannerGuides' && (
+            Array.isArray(creatorMedia['guides']) && creatorMedia['guides'].length != 0 ? creatorMedia['guides'].map((media) => <SavedCardTemplate savedMedia={media} key={media.guideID} setScreen={setActiveScreen} setMessage={handleDataFromComponent} onSelect={(id) => setSelectedMediaID(id)}></SavedCardTemplate>) : 'No planner guides, add a new planner guide now!'
           )}
         </>}
 
-        {activeScreen == 'manageFeeds' && (
-          <ManageVideoTemplate setScreen={setActiveScreen} video={localVideo}></ManageVideoTemplate>
+        {activeScreen == 'manageFeeds' && activeCategory == 'localVideos' && (
+          <ManageVideoTemplate video={localVideo} setScreen={setActiveScreen} setMessage={handleDataFromComponent}></ManageVideoTemplate>
+        )}
+        {activeScreen == 'manageFeeds' && activeCategory == 'plannerGuides' && (
+          <ManageGuideTemplate guide={plannerGuide} setScreen={setActiveScreen} setMessage={handleDataFromComponent}></ManageGuideTemplate>
         )}
       </Grid>
     </Grid>
-    {/* Display snackbar when save/unsave video */}
+    {/* Display snackbar */}
     <SnackBarDialog ref={snackRef}></SnackBarDialog>
   </>
 }

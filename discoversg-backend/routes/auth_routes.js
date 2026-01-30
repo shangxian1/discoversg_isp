@@ -116,6 +116,27 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/retrieve-preferences/:userID', async (req, res) => {
+  const { userID } = req.params;
+  if (!userID) return res.status(400).json({ success: false, message: "User ID missing" });
+  try {
+    const [rows] = await global.db.execute(
+      'SELECT * FROM preference WHERE userID = ?',
+      [userID]
+    );
+
+    if (rows.length > 0) {
+      const preference = rows[0];
+      res.status(200).json({ success: true, preference });
+    } else {
+      res.status(200).json({ success: true, preference: {} });
+    }
+  } catch (error) {
+    console.error("Retrieve Preference Error:", error);
+    res.status(500).json({ success: false, message: "Database Error" });
+  }
+})
+
 // --- Unified Update Route ---
 router.put('/update-profile', async (req, res) => {
   const { userID, userName, userEmail, userPassword, profilePicUrl, description } = req.body;
@@ -139,13 +160,13 @@ router.put('/update-profile', async (req, res) => {
 });
 
 router.put('/update-preferences', async (req, res) => {
-  const { userID, nearbyLocation, budgetLevel, dietaryRequirements } = req.body;
+  const { userID, nearbyLocation, budgetLevel, dietaryRequirements, otherNotes } = req.body;
   try {
     await global.db.execute(
       `INSERT INTO preference (userID, nearbyLocation, budgetLevel, dietaryRequirements) 
              VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE 
-             nearbyLocation = VALUES(nearbyLocation), budgetLevel = VALUES(budgetLevel), dietaryRequirements = VALUES(dietaryRequirements)`,
-      [userID, nearbyLocation, budgetLevel, dietaryRequirements]
+             nearbyLocation = VALUES(nearbyLocation), budgetLevel = VALUES(budgetLevel), dietaryRequirements = VALUES(dietaryRequirements), otherNotes = VALUES(otherNotes)`,
+      [userID, nearbyLocation, budgetLevel, dietaryRequirements, otherNotes]
     );
     res.status(200).json({ success: true, message: "Preferences updated" });
   } catch (error) {

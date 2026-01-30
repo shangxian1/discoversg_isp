@@ -12,7 +12,7 @@ import ContentSection from '../components/home/ContentSection';
 import { BACKEND_URL } from '../constants';
 
 const UserHome = () => {
-  // Retrieve the user object from localStorage
+  // Retrieve the user object from sessionStorage
   const userData = JSON.parse(sessionStorage.getItem('user'));
 
   // --- 2. RESTORE THE STATE & LOGIC ---

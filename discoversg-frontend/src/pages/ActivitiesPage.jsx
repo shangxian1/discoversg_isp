@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import ActivityCard from '../components/activity/ActivityCard';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -6,15 +7,18 @@ import ItineraryTimeline from '../components/activity/ItineraryTimeline';
 import { Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { BACKEND_URL } from '../constants';
+import { VerticalTimeline } from 'react-vertical-timeline-component';
 
 export default function Activities() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     const userId = user?.id ?? user?.userID;
     // 1. Data State
     const [activities, setActivities] = useState([]);
-    const [itinerary, setItinerary] = useState([]);
+    const [numItineraries, setNumItineraries] = useState(0);
+    const [featuredActivity, setFeaturedActivity] = useState({});
+    const [featuredItinerary, setFeaturedItinerary] = useState([]);
     const [favIds, setFavIds] = useState(new Set());
-    
+
     // 2. Filter States
     const [searchQuery, setSearchQuery] = useState('');
     const [budgetFilter, setBudgetFilter] = useState('All');
@@ -24,6 +28,8 @@ export default function Activities() {
     // 3. Dynamic Dropdown Options
     const [uniqueCategories, setUniqueCategories] = useState([]);
     const [uniqueLocations, setUniqueLocations] = useState([]);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Fetch Activities
@@ -38,94 +44,121 @@ export default function Activities() {
                 setUniqueCategories(cats);
                 setUniqueLocations(locs);
             }).catch((e) => {
-        console.error("Activities fetch failed:", e);
-        setActivities([]);
+                console.error("Activities fetch failed:", e);
+                setActivities([]);
             });
 
-        // Fetch Itinerary
-        fetch(`${BACKEND_URL}/api/itinerary`)
+        // Fetch featured activity for top section
+        fetch(`${BACKEND_URL}/api/featured-activity`)
             .then(res => res.json())
-            .then(data => setItinerary(data));
+            .then(data => {
+                setFeaturedActivity(data);
+            }).catch((e) => {
+                console.error("Featured activity fetch failed:", e);
+                setFeaturedActivity({});
+            });
     }, []);
-      // ✅ Load favourite IDs (only when logged in)
-  useEffect(() => {
-    let alive = true;
 
-    async function loadFavIds() {
-      if (!userId) return;
+    // Retrieve most recent itinerary for top section
+    useEffect(() => {
+        if (!user) {
+            setFeaturedItinerary([]);
+            return;
+        };
+        fetch(`${BACKEND_URL}/api/user-itineraries/${user.id}`)
+            .then(res => res.json())
+            .then(data => {
+                setNumItineraries(data.length);
+                const row = data[0];
+                // Parse itinerary info
+                const parsedInfo = row.itineraryInfo ? JSON.parse(row.itineraryInfo) : { details: [] };
+                // Access the 'itinerary' array from the first element
+                const formattedData = parsedInfo[0].itinerary
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/favourites/${userId}/ids`);
-        if (!res.ok) throw new Error(`Fav IDs API error ${res.status}`);
-        const ids = await res.json();
-        if (alive) setFavIds(new Set(Array.isArray(ids) ? ids : []));
-      } catch (e) {
-        console.error("Fav IDs fetch failed:", e);
-        if (alive) setFavIds(new Set());
-      }
-    }
+                setFeaturedItinerary(formattedData);
+            });
+    }, []);
 
-    loadFavIds();
-    return () => {
-      alive = false;
-    };
-  }, [userId]);
+    // ✅ Load favourite IDs (only when logged in)
+    useEffect(() => {
+        let alive = true;
 
-  // ✅ Toggle favourite (optimistic UI)
-  const toggleFav = async (activity) => {
-    if (!userId) {
-      alert("Please log in to add favourites.");
-      return;
-    }
+        async function loadFavIds() {
+            if (!userId) return;
 
-    const activityId = activity?.id ?? activity?.activityID;
-    if (!activityId) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/favourites/${userId}/ids`);
+                if (!res.ok) throw new Error(`Fav IDs API error ${res.status}`);
+                const ids = await res.json();
+                if (alive) setFavIds(new Set(Array.isArray(ids) ? ids : []));
+            } catch (e) {
+                console.error("Fav IDs fetch failed:", e);
+                if (alive) setFavIds(new Set());
+            }
+        }
 
-    // optimistic update
-    setFavIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(activityId)) next.delete(activityId);
-      else next.add(activityId);
-      return next;
-    });try {
-      const res = await fetch(`${BACKEND_URL}/api/favourites/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // ✅ send BOTH styles so backend won't miss
-        body: JSON.stringify({
-          userId,
-          activityId,
-          userID: userId,
-          activityID: activityId,
-        }),
-      });
+        loadFavIds();
+        return () => {
+            alive = false;
+        };
+    }, [userId]);
 
-      if (!res.ok) throw new Error(`Toggle favourite failed: ${res.status}`);
+    // ✅ Toggle favourite (optimistic UI)
+    const toggleFav = async (activity) => {
+        if (!userId) {
+            alert("Please log in to add favourites.");
+            return;
+        }
 
-      // If backend returns { favourited: true/false }, sync
-      const data = await res.json().catch(() => null);
-      if (data && typeof data.favourited === "boolean") {
+        const activityId = activity?.id ?? activity?.activityID;
+        if (!activityId) return;
+
+        // optimistic update
         setFavIds((prev) => {
-          const next = new Set(prev);
-          if (data.favourited) next.add(activityId);
-          else next.delete(activityId);
-          return next;
-        });
-      }
-    } catch (e) {
-      console.error(e);
+            const next = new Set(prev);
+            if (next.has(activityId)) next.delete(activityId);
+            else next.add(activityId);
+            return next;
+        }); try {
+            const res = await fetch(`${BACKEND_URL}/api/favourites/toggle`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // ✅ send BOTH styles so backend won't miss
+                body: JSON.stringify({
+                    userId,
+                    activityId,
+                    userID: userId,
+                    activityID: activityId,
+                }),
+            });
 
-      // revert on error
-      setFavIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(activityId)) next.delete(activityId);
-        else next.add(activityId);
-        return next;
-      });
+            if (!res.ok) throw new Error(`Toggle favourite failed: ${res.status}`);
 
-      alert("Failed to update favourites. Check backend console.");
-    }
-  };
+            // If backend returns { favourited: true/false }, sync
+            const data = await res.json().catch(() => null);
+            if (data && typeof data.favourited === "boolean") {
+                setFavIds((prev) => {
+                    const next = new Set(prev);
+                    if (data.favourited) next.add(activityId);
+                    else next.delete(activityId);
+                    return next;
+                });
+            }
+        } catch (e) {
+            console.error(e);
+
+            // revert on error
+            setFavIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(activityId)) next.delete(activityId);
+                else next.add(activityId);
+                return next;
+            });
+
+            alert("Failed to update favourites. Check backend console.");
+        }
+    };
+
     // 4. The Filtering Engine
     const filteredActivities = activities.filter((activity) => {
         // A. Search Logic
@@ -173,7 +206,7 @@ export default function Activities() {
                         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-white">
                             <FavoriteIcon sx={{ fontSize: 16 }} />
                         </span>
-                        <span>Itinerary ({itinerary.length})</span>
+                        <span>Itinerary ({numItineraries})</span>
                     </button>
                 </div>
 
@@ -181,13 +214,13 @@ export default function Activities() {
                 <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-6 sm:grid-cols-2">
                     <div className="lg:col-span-3 h-fit">
                         <h2 className="text-lg font-semibold mb-3">Featured Section</h2>
-                        {activities[0] ? (
-                            <ActivityCard 
-                                key={activities[0].id} 
-                                activity={activities[0]} 
-                                featured 
+                        {featuredActivity ? (
+                            <ActivityCard
+                                key={featuredActivity.id}
+                                activity={featuredActivity}
+                                featured
                                 showHeart={true}
-                                isFav={favIds.has(activities[0].id)}
+                                isFav={favIds.has(featuredActivity.id)}
                                 onToggleFav={toggleFav}
                             />
                         ) : (
@@ -200,7 +233,31 @@ export default function Activities() {
                     {/* RESTORED: Your original testing itinerary code */}
                     <div className='lg:col-span-3' style={{ maxHeight: '600px', overflowY: 'hidden' }}>
                         <h2 className="text-lg font-semibold mb-3">Itinerary</h2>
-                        {itinerary ? (<ItineraryTimeline itinerary={itinerary} />) :
+                        {featuredItinerary.length !== 0 ? (
+                            <div className='relative'>
+                                <VerticalTimeline className="p-5! color m-0! w-full! relative">
+                                    {featuredItinerary.map((itinerary, index) => (
+                                        <ItineraryTimeline
+                                            itineraryDetail={itinerary}
+                                            key={index}
+                                        />
+                                    ))}
+                                </VerticalTimeline>
+                                <Button
+                                    variant="contained"
+                                    sx={{
+                                        position: 'fixed',
+                                        bottom: '30px',
+                                        right: '30px',
+                                        zIndex: 1000,
+                                        bgcolor: '#0d9488'
+                                    }}
+                                    onClick={() => navigate('/itinerary')}
+                                >
+                                    View Current Itinerary
+                                </Button>
+                            </div>
+                        ) : (
                             <div className='flex justify-center items-center flex-col w-full!'>
                                 <p className='pb-3 font-bold text-xl'>No current itinerary</p>
                                 <Button
@@ -212,7 +269,7 @@ export default function Activities() {
                                     Generate an itinerary
                                 </Button>
                             </div>
-                        }
+                        )}
                     </div>
                 </div>
 
@@ -258,9 +315,9 @@ export default function Activities() {
                 {/* --- GRID SECTION: ONLY uses filteredActivities --- */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {filteredActivities.map((activity) => (
-                      <ActivityCard 
-                            key={activity.id} 
-                            activity={activity} 
+                        <ActivityCard
+                            key={activity.id}
+                            activity={activity}
                             showHeart={true}
                             isFav={favIds.has(activity.id)}
                             onToggleFav={toggleFav}
