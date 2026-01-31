@@ -13,7 +13,7 @@ const bannerImages = [
   { id: 3, src: banner3, alt: "Singapore Banner 3" }
 ];
 
-const HeroCarousel = () => {
+const HeroCarousel = ({searchQuery, setSearchQuery}) => {
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
@@ -47,7 +47,9 @@ const HeroCarousel = () => {
       <Container maxWidth="md" sx={{ position: 'relative', mt: -4, zIndex: 10 }}>
         <Paper component="form" sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: 5, boxShadow: 3 }}>
           <IconButton sx={{ p: '10px' }}><SearchIcon /></IconButton>
-          <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Search for locations, food, or activities..." />
+          <InputBase type='search'
+          sx={{ ml: 1, flex: 1 }} placeholder="Search for locations, food, or activities..."
+          value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           <Button variant="contained" color="secondary" sx={{ borderRadius: 5, px: 4 }}>Search</Button>
         </Paper>
       </Container>

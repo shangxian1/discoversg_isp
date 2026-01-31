@@ -12,6 +12,7 @@ import ContentSection from '../components/home/ContentSection';
 import { BACKEND_URL } from '../constants';
 
 const UserHome = () => {
+  const [searchQuery, setSearchQuery] = useState('');
   // Retrieve the user object from sessionStorage
   const userData = JSON.parse(sessionStorage.getItem('user'));
 
@@ -48,9 +49,10 @@ const UserHome = () => {
     <Box sx={{ bgcolor: '#fff', minHeight: '100vh', pb: 5 }}>
       
       {/* 2. Replaced the manual hero Box with your component */}
-      <HeroCarousel />
-
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <HeroCarousel 
+        searchQuery={searchQuery} 
+        setSearchQuery={setSearchQuery} 
+      />      <Container maxWidth="lg" sx={{ mt: 4 }}>
         
         {/* Welcome Message Section */}
         <Box sx={{ mb: 4 }}>
@@ -65,9 +67,10 @@ const UserHome = () => {
         {loading ? (
            <Box sx={{ display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>
         ) : (
-           <ContentSection 
+          <ContentSection 
               title="For You (Top Matches)" 
               items={recommendations} 
+              searchQuery={searchQuery} 
            />
         )}
 

@@ -167,7 +167,7 @@
     );
   }
 
-  export default function ContentSection({ items, title }) {
+  export default function ContentSection({ items, title, searchQuery="" }) {
     const user = JSON.parse(sessionStorage.getItem("user"));
     const userId = user?.id ?? user?.userID;
     const [favIds, setFavIds] = useState(new Set());
@@ -256,15 +256,40 @@
       alert("Failed to update favourites.");
     }
   };
+  // ✅ 2. Filter the general activities list based on search
+  const filteredActivities = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return activities;
+
+    return activities.filter((a) => {
+      const haystack = [
+        a?.title, a?.activityName, a?.category, a?.location, a?.summary
+      ].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [activities, searchQuery]);
+
+  // ✅ 3. Filter the Recommendations (Items prop) based on search
+  // This preserves the engine's work but hides non-matching items
+  const filteredRecommendations = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || !items) return items;
+
+    return items.filter((a) => {
+      const haystack = [
+        a?.title, a?.activityName, a?.category, a?.location, a?.summary
+      ].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [items, searchQuery]);
+
     const offers = useMemo(
-      () => activities.filter((a) => Number(a.price) === 0 || Number(a.price) <= 15).slice(0, 4),
-      [activities]
+    () => filteredActivities.filter((a) => Number(a.price) === 0 || Number(a.price) <= 15).slice(0, 4),
+      [filteredActivities]
     );
 
-    const featured = useMemo(() => activities.slice(0, 6), [activities]);
-
-    const hasRecommendations = items && items.length > 0;
-
+    const featured = useMemo(() => filteredActivities.slice(0, 6), [filteredActivities]);
+    const hasRecommendations = filteredRecommendations && filteredRecommendations.length > 0;
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         
@@ -275,7 +300,7 @@
             </Typography>
             
             <Grid container spacing={3}>
-              {items.map((item) => (
+              {filteredRecommendations.map((item) => (
                 <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
                  <GemCard item={item}
                   isFav={favIds.has(item.id || item.activityID)}
@@ -323,7 +348,12 @@
           <Grid container spacing={3}>
             {featured.map((item) => (
               <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
-                <GemCard item={item} />
+                <GemCard 
+                  item={item} 
+                  isFav={favIds.has(item.id || item.activityID)}
+                  onToggleFav={toggleFav}
+                  showHeart={Boolean(userId)}
+                />
               </Grid>
             ))}
           </Grid>
