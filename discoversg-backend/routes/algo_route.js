@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 require('../database'); 
 
-console.log("ALGO ROUTES FILE LOADED! (Bonus Location Logic)");
+console.log("ALGO ROUTES FILE LOADED! (Using favourite_activity table)");
 
 // --- 1. Helper Functions ---
 
@@ -21,7 +21,13 @@ async function getUserProfile(userID) {
         nearbyLocation: null 
     };
 
-    // 2. Get Implicit History (Past Bookings)
+    const categoryCounts = {};
+    const tagCounts = {};
+    let totalInterests = 0;
+    const favIDs = new Set();
+    const favCategories = new Set(); 
+
+    // 2. Get Booking History
     const [historyRows] = await global.db.execute(`
         SELECT c.categoryName, a.tags
         FROM booking b
@@ -31,85 +37,109 @@ async function getUserProfile(userID) {
         WHERE b.userID = ? AND b.status IN ('CONFIRMED', 'PAID')
     `, [userID]);
 
-    const categoryCounts = {};
-    const tagCounts = {};
-    let totalBookings = 0;
+    // 3. ✅ CHANGED: Get Favourites from 'favourite_activity'
+    const [favRows] = await global.db.execute(`
+        SELECT c.categoryName, a.tags, a.activityID
+        FROM favourite_activity f
+        JOIN activity a ON f.activityID = a.activityID
+        JOIN category c ON a.categoryID = c.categoryID
+        WHERE f.userID = ?
+    `, [userID]);
 
-    historyRows.forEach(row => {
-        totalBookings++;
+    // Helper to process rows
+    const processInterest = (row, weight = 1) => {
+        totalInterests += weight;
+        
         if (row.categoryName) {
-            categoryCounts[row.categoryName] = (categoryCounts[row.categoryName] || 0) + 1;
+            categoryCounts[row.categoryName] = (categoryCounts[row.categoryName] || 0) + weight;
         }
+        
         if (row.tags) {
             row.tags.split(',').forEach(t => {
                 const tag = t.trim();
-                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                tagCounts[tag] = (tagCounts[tag] || 0) + weight;
             });
         }
+    };
+
+    // Process Bookings (Weight 1.0)
+    historyRows.forEach(row => processInterest(row, 1.0));
+
+    // Process Favourites (Weight 1.5 - Higher impact)
+    favRows.forEach(row => {
+        favIDs.add(row.activityID);
+        favCategories.add(row.categoryName); 
+        processInterest(row, 1.5);
     });
 
-    return { preferences, categoryCounts, tagCounts, totalBookings };
+    return { preferences, categoryCounts, tagCounts, totalInterests, favIDs, favCategories };
 }
 
 function computeMatchStats(activity, userProfile) {
     let actualScore = 0;
     let maxPossibleScore = 0;
     
-    const { preferences, categoryCounts, tagCounts, totalBookings } = userProfile;
-    const activityTags = activity.tagsArray || [];
+    const { preferences, categoryCounts, tagCounts, totalInterests, favIDs, favCategories } = userProfile;
+    const activityTags = activity.tags ? activity.tags.split(',').map(t => t.trim()) : [];
 
-    // --- A. Dietary Filter (Strict) ---
+    // --- A. Dietary Filter ---
     const NO_RESTRICTION_KEYWORDS = ['none', 'nil', 'no', 'null', 'n/a', '-', '', 'vacant'];
     const userDiet = preferences.dietaryRequirements ? preferences.dietaryRequirements.toLowerCase().trim() : 'none';
 
     if (activity.categoryName === 'Food & Beverages' && !NO_RESTRICTION_KEYWORDS.includes(userDiet)) {
-        const hasDietary = activityTags.some(t => t.toLowerCase() === userDiet);
+        const hasDietary = activityTags.some(t => t.toLowerCase().includes(userDiet));
         if (!hasDietary) return { score: -1, max: 0 }; 
     }
 
-    // --- B. Budget Check (Base: 30 pts) ---
+    // --- 1. Direct Favourite Bonus (50 pts) ---
+    // Pushes items you ALREADY favourited to the very top
+    if (favIDs.has(activity.activityID)) {
+        actualScore += 50; 
+    }
+
+    // --- 2. Favorited Category Bonus (30 pts) ---
+    // Boosts similar items (e.g. if you fav "Museum", boost all "Museums")
+    if (favCategories.has(activity.categoryName)) {
+        actualScore += 30;
+    }
+
+    // --- 3. Budget Check (30 pts) ---
     if (preferences.budgetLevel) {
         maxPossibleScore += 30; 
         const price = parseFloat(activity.price);
         
-        // Logic: If it fits the budget, full points.
         if (preferences.budgetLevel === 'Low' && price <= 20) actualScore += 30;
-        else if (preferences.budgetLevel === 'Medium' && price <= 60) actualScore += 30;
-        else if (preferences.budgetLevel === 'High') actualScore += 30; 
+        else if (preferences.budgetLevel === 'Medium' && price > 20 && price <= 60) actualScore += 30;
+        else if (preferences.budgetLevel === 'High' && price > 60) actualScore += 30;
     }
 
-    // --- C. Location Check (BONUS ONLY: 10 pts) ---
+    // --- 4. Location Check (10 pts) ---
     if (preferences.nearbyLocation && activity.location) {
         if (activity.location.toLowerCase().includes(preferences.nearbyLocation.toLowerCase())) {
-            actualScore += 10; // Reduced from 15 to 10
+            actualScore += 10;
         }
     }
 
-    // --- D. Category History (Main Driver: 40 pts) ---
-    if (totalBookings > 0) {
+    // --- 5. History Frequency (40 pts) ---
+    if (totalInterests > 0) {
         maxPossibleScore += 40; 
-        
         const count = categoryCounts[activity.categoryName] || 0;
-        const frequency = count / totalBookings; 
-        
+        const frequency = count / totalInterests; 
         actualScore += (frequency * 40);
     }
 
-    // --- E. Tag History (Bonus: 20 pts) ---
-    if (totalBookings > 0 && activityTags.length > 0) {
+    // --- 6. Tag History (20 pts) ---
+    if (totalInterests > 0 && activityTags.length > 0) {
         let tagScoreAccumulator = 0;
-
         activityTags.forEach(tag => {
             const count = tagCounts[tag] || 0;
-            const frequency = count / totalBookings;
+            const frequency = count / totalInterests;
             tagScoreAccumulator += (frequency * 10); 
         });
-
         const finalTagBonus = Math.min(tagScoreAccumulator, 20);
         actualScore += finalTagBonus;
     }
 
-    // Safety: Prevent divide by zero for brand new users with no preferences
     if (maxPossibleScore === 0) maxPossibleScore = 1;
 
     return { score: actualScore, max: maxPossibleScore };
@@ -119,39 +149,55 @@ function computeMatchStats(activity, userProfile) {
 
 router.get('/recommendations/:userID', async (req, res) => {
     const { userID } = req.params;
+    const searchQuery = req.query.search || ""; 
+
     try {
         const userProfile = await getUserProfile(userID);
         
         if (!global.db) throw new Error("Database not connected");
 
-        const [activities] = await global.db.execute(`
+        let sql = `
             SELECT a.activityID, a.activityName, a.price, a.location, 
                    a.activityPicUrl, a.tags, c.categoryName
             FROM activity a
             JOIN category c ON a.categoryID = c.categoryID
-        `);
+        `;
+        
+        const params = [];
+
+        // Search Filter
+        if (searchQuery.trim() !== "") {
+            sql += ` WHERE (a.activityName LIKE ? OR c.categoryName LIKE ? OR a.tags LIKE ?)`;
+            const term = `%${searchQuery}%`;
+            params.push(term, term, term);
+        }
+
+        const [activities] = await global.db.execute(sql, params);
 
         let ranked = activities.map(a => {
-            const tagsArray = a.tags ? a.tags.split(',').map(t => t.trim()) : [];
-            const { score, max } = computeMatchStats({ ...a, tagsArray }, userProfile);
+            const { score, max } = computeMatchStats(a, userProfile);
 
             if (score === -1) return null;
 
             let finalRatio = (score / max);
-            if (finalRatio > 1.0) finalRatio = 1.0; 
+            if (finalRatio > 1.5) finalRatio = 1.5; // Cap bonus at 150% match
 
             return {
+                id: a.activityID, 
+                title: a.activityName,
+                image: a.activityPicUrl,
+                category: a.categoryName,
                 ...a,
-                tags: tagsArray,
                 matchScore: parseFloat(finalRatio.toFixed(2))
             };
         });
 
         ranked = ranked.filter(item => item !== null);
+        
+        // Sort descending by score
         ranked.sort((a, b) => b.matchScore - a.matchScore);
 
-        res.status(200).json(ranked.slice(0, 5));
-
+    res.status(200).json(ranked.slice(0, 5));   
     } catch (error) {
         console.error("Recommendation Error:", error);
         res.status(500).json({ success: false, message: error.message });

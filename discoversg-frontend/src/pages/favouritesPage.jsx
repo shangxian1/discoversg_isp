@@ -12,7 +12,9 @@ import {
   CardActionArea,
   Stack,
   CircularProgress,
+  IconButton
 } from "@mui/material";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { BACKEND_URL } from "../constants";
 
@@ -22,9 +24,8 @@ const priceLabel = (price) => {
   return `$${n.toFixed(2)}`;
 };
 
-function GemCard({ item }) {
+function GemCard({ item, onToggleFav }) {
   const navigate = useNavigate();
-
   const activityId = item.id || item.activityID;
 
   const imageUrl =
@@ -50,7 +51,6 @@ function GemCard({ item }) {
       price: item.price || 0,
       finalImage: imageUrl,
     };
-
     navigate(`/activity/${activityId}`, { state: mappedState });
   };
 
@@ -66,6 +66,7 @@ function GemCard({ item }) {
         boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
         transition: "transform .15s ease, box-shadow .15s ease",
         "&:hover": { transform: "translateY(-2px)", boxShadow: 6 },
+        position: "relative"
       }}
     >
       <CardActionArea
@@ -77,6 +78,7 @@ function GemCard({ item }) {
           alignItems: "stretch",
         }}
       >
+        
         <Box sx={{ width: "100%", position: "relative" }}>
           <CardMedia
             component="img"
@@ -85,6 +87,26 @@ function GemCard({ item }) {
             sx={{ width: "100% !important", height: "200px", objectFit: "cover" }}
           />
         </Box>
+
+        {/* ✅ The Heart Button */}
+      <IconButton
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleFav(item); // Call the remove function
+        }}
+        sx={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          zIndex: 10,
+          bgcolor: "rgba(255,255,255,0.9)",
+          "&:hover": { bgcolor: "white" },
+        }}
+      >
+        {/* On the favourites page, it is ALWAYS red (favorited) */}
+        <FavoriteIcon sx={{ color: "#d31111" }} />
+      </IconButton>
 
         <CardContent sx={{ flexGrow: 1, p: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -120,7 +142,7 @@ function GemCard({ item }) {
 
 export default function Favourites() {
   const user = JSON.parse(sessionStorage.getItem("user"));
-
+  const userId = user?.id ?? user?.userID;
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
 
@@ -178,6 +200,35 @@ export default function Favourites() {
   };
 }, [user?.id, user?.userID]);
 
+const handleRemoveFav = async (activity) => {
+    const activityId = activity.id || activity.activityID;
+    
+    // 1. Optimistic Update (Remove from screen immediately)
+    const originalItems = [...items];
+    setItems((prevItems) => prevItems.filter((i) => (i.id || i.activityID) !== activityId));
+
+    try {
+      // 2. Call Backend
+      const res = await fetch(`${BACKEND_URL}/api/favourites/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          activityId,
+          userID: userId,
+          activityID: activityId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to remove favourite");
+    } catch (e) {
+      console.error(e);
+      alert("Could not remove favourite. Please try again.");
+      // 3. Revert if error
+      setItems(originalItems);
+    }
+  };
+
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -197,7 +248,10 @@ export default function Favourites() {
         <Grid container spacing={3}>
           {items.map((item) => (
             <Grid key={item.id || item.activityID} item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
-              <GemCard item={item} />
+             <GemCard 
+                item={item} 
+                onToggleFav={handleRemoveFav} 
+              />
             </Grid>
           ))}
         </Grid>
