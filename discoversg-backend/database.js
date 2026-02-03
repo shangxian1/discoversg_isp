@@ -4,6 +4,7 @@ const dbConfig = {
   host: process.env.db_host,
   user: process.env.db_user,
   password: process.env.db_password,
+  port: process.env.port,
   database: process.env.db,
   waitForConnections: true,
   connectionLimit: 10,
