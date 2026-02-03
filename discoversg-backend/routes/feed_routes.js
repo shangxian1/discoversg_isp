@@ -269,7 +269,7 @@ router.post('/add/local-video', async (req, res) => {
       const newViewCode = incrementMediaCode(lastVideoCode);
 
       if (ownVideoUrl) {
-        const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, ownVideoUrl, datePosted]);
+        const [result] = await pool.execute('INSERT INTO post(postCode, userID, title, description, addressName, fullAddress, noOfLikes, mediaUrl, datePosted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [newViewCode, userID, title, description, address, fullAddress, noOfLikes, ownVideoUrl, datePosted]);
         if (result.affectedRows > 0) {
           res.status(200).json({ success: true, message: 'Local Video Uploaded Successfully!' });
         }
@@ -316,7 +316,7 @@ router.post('/add/travel-guide', async (req, res) => {
       const lastGuideCode = rows[0].guideCode;
       const newViewCode = incrementMediaCode(lastGuideCode);
 
-      const [result] = await pool.execute('INSERT INTO guide(guideCode, userID, title, description, imageUrl, mediaUrl, datePosted, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())', [newViewCode, userID, title, description, imageUrl, mediaUrl, datePosted]);
+      const [result] = await pool.execute('INSERT INTO guide(guideCode, userID, title, description, imageUrl, mediaUrl, datePosted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [newViewCode, userID, title, description, imageUrl, mediaUrl, datePosted]);
       if (result.affectedRows > 0) {
         res.status(200).json({ success: true, message: 'Travel Guide Uploaded Successfully!' });
       } else {
