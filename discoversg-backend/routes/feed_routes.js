@@ -98,7 +98,7 @@ router.post('/save-unsave-media', async (req, res) => {
 router.get('/saved-videos/:userID', async (req, res) => {
   const { userID } = req.params;
   try {
-    const [rows] = await pool.execute('SELECT savedMediaID, mediaID, title, mediaUrl, noOfLikes, user.userName, user.profilePicUrl FROM savedmedia INNER JOIN post p ON p.postCode = savedmedia.mediaID INNER JOIN user ON user.userID = p.userID WHERE savedMedia.userID = ?', [userID]);
+    const [rows] = await pool.execute('SELECT savedMediaID, mediaID, title, mediaUrl, noOfLikes, user.userName, user.profilePicUrl FROM savedmedia INNER JOIN post p ON p.postCode = savedmedia.mediaID INNER JOIN user ON user.userID = p.userID WHERE savedmedia.userID = ?', [userID]);
     if (rows.length > 0) {
       const formattedRows = rows.map(row => ({
         savedMediaID: row.savedMediaID,
