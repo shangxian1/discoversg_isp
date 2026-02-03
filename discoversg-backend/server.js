@@ -7,6 +7,7 @@ const express = require('express');
 
 const app = express();
 const port = process.env.PORT || 3000;
+console.log(process.env.PORT); // debugging
 
 const aiRoutes = require('./routes/ai_routes');
 const authRoutes = require('./routes/auth_routes');
@@ -22,7 +23,7 @@ const favouritesRoutes = require('./routes/favourite');
 
 app.use(cors({
     origin: [
-        'https://discoversg-7nyft.ondigitalocean.app/',
+        'https://discoversg-dgvbj.ondigitalocean.app/',
         'http://localhost:5173'
     ]
 }));
